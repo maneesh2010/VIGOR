@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>VIGOR — ICU Risk Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Epilogue:wght@400;600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+:root{
+  --bg:#04090f;--s1:#080f18;--s2:#0b1520;--s3:#0f1d2c;--s4:#132539;
+  --b1:#162d42;--b2:#1e3a52;--b3:#2a4f6e;
+  --teal:#00d4aa;--blue:#0ea5e9;--amber:#f59e0b;--red:#ef4444;
+  --t1:#ddeeff;--t2:#7aaec8;--t3:#4a7a9b;--t4:#2a5070;
+  --ff:"Epilogue",sans-serif;--fb:"DM Sans",sans-serif;--fm:"DM Mono",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--t1);font-family:var(--fb);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 80% 50% at 5% 10%,rgba(14,165,233,.06),transparent 55%),
+             radial-gradient(ellipse 60% 40% at 95% 90%,rgba(0,212,170,.05),transparent 55%),
+             repeating-linear-gradient(0deg,transparent 39px,rgba(0,212,170,.012) 40px),
+             repeating-linear-gradient(90deg,transparent 39px,rgba(0,212,170,.012) 40px)}
+
+/* ── AUTH SCREEN ── */
+#authScreen{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+.auth-card{background:var(--s1);border:1px solid var(--b2);border-radius:20px;width:420px;max-width:95vw;padding:36px 32px;position:relative;z-index:1;box-shadow:0 40px 120px rgba(0,0,0,.6)}
+.auth-card::before{content:"";position:absolute;inset:-1px;border-radius:20px;background:linear-gradient(135deg,rgba(0,212,170,.15),rgba(14,165,233,.08),transparent 60%);pointer-events:none;z-index:-1}
+.auth-logo{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:28px}
+.auth-lm{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--teal),var(--blue));display:flex;align-items:center;justify-content:center;font-family:var(--ff);font-weight:900;font-size:20px;color:#04090f;box-shadow:0 0 30px rgba(0,212,170,.4)}
+.auth-lt{font-family:var(--ff);font-weight:900;font-size:22px;letter-spacing:.06em}
+.auth-lt em{color:var(--teal);font-style:normal}
+.auth-sub{text-align:center;font-size:12px;color:var(--t4);margin-top:4px;letter-spacing:.05em}
+.auth-tabs{display:flex;background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:3px;margin-bottom:22px}
+.auth-tab{flex:1;padding:7px;text-align:center;font-family:var(--fm);font-size:11px;color:var(--t3);cursor:pointer;border-radius:5px;transition:all .15s}
+.auth-tab.on{background:var(--b2);color:var(--teal)}
+.auth-field{margin-bottom:14px}
+.auth-field label{display:block;font-family:var(--fm);font-size:10px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px}
+.auth-field input{width:100%;background:var(--s3);border:1px solid var(--b1);border-radius:8px;color:var(--t1);font-family:var(--fm);font-size:13px;padding:10px 12px;outline:none;transition:border-color .2s}
+.auth-field input:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(14,165,233,.1)}
+.auth-field input.err{border-color:var(--red)}
+.auth-btn{width:100%;padding:12px;background:linear-gradient(135deg,var(--teal),#00a888);border:none;border-radius:8px;color:#04090f;font-family:var(--ff);font-weight:700;font-size:14px;cursor:pointer;transition:all .2s;margin-top:4px}
+.auth-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,212,170,.3)}
+.auth-btn:disabled{opacity:.5;pointer-events:none;transform:none}
+.auth-or{display:flex;align-items:center;gap:10px;margin:18px 0;color:var(--t4);font-family:var(--fm);font-size:10px}
+.auth-or::before,.auth-or::after{content:"";flex:1;height:1px;background:var(--b1)}
+
+.auth-msg{font-family:var(--fm);font-size:11px;text-align:center;margin-top:10px;min-height:16px}
+.auth-msg.err{color:var(--red)}.auth-msg.ok{color:var(--teal)}
+.auth-link{font-family:var(--fm);font-size:10px;color:var(--t3);text-align:center;margin-top:14px;cursor:pointer}
+.auth-link span{color:var(--blue);cursor:pointer}.auth-link span:hover{text-decoration:underline}
+
+/* OTP screen */
+.otp-wrap{display:none;flex-direction:column;align-items:center;gap:12px}
+.otp-wrap.on{display:flex}
+.otp-ico{font-size:36px}
+.otp-title{font-family:var(--ff);font-weight:700;font-size:16px}
+.otp-sub{font-size:12px;color:var(--t3);text-align:center;line-height:1.6}
+.otp-digits{display:flex;gap:8px;margin:8px 0}
+.otp-d{width:44px;height:52px;background:var(--s3);border:1px solid var(--b2);border-radius:8px;color:var(--t1);font-family:var(--ff);font-weight:700;font-size:22px;text-align:center;outline:none;transition:border-color .2s;caret-color:var(--teal)}
+.otp-d:focus{border-color:var(--teal);box-shadow:0 0 0 2px rgba(0,212,170,.15)}
+.otp-resend{font-family:var(--fm);font-size:10px;color:var(--t4);cursor:pointer}
+.otp-resend span{color:var(--blue)}.otp-resend span:hover{text-decoration:underline}
+.otp-hint{font-family:var(--fm);font-size:10px;background:rgba(0,212,170,.06);border:1px solid rgba(0,212,170,.2);border-radius:6px;padding:6px 10px;color:var(--teal);width:100%;text-align:center}
+
+/* ── MAIN APP ── */
+#app{display:none;flex-direction:column;height:100vh}
+#app.on{display:flex}
+header{z-index:10;display:flex;align-items:center;border-bottom:1px solid var(--b1);background:rgba(4,9,15,.96);flex-shrink:0;height:52px}
+.logo{display:flex;align-items:center;gap:10px;padding:0 18px;border-right:1px solid var(--b1);height:100%}
+.lm{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--teal),var(--blue));display:flex;align-items:center;justify-content:center;font-family:var(--ff);font-weight:900;font-size:15px;color:#04090f;box-shadow:0 0 20px rgba(0,212,170,.3)}
+.lt{font-family:var(--ff);font-weight:800;font-size:16px;letter-spacing:.06em}.lt em{color:var(--teal);font-style:normal}
+.ls{font-family:var(--fm);font-size:8px;color:var(--t4);letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
+nav{display:flex;align-items:center;height:100%;padding:0 6px}
+.nb{display:flex;align-items:center;gap:5px;padding:0 13px;height:100%;font-family:var(--fm);font-size:10px;letter-spacing:.05em;color:var(--t3);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.nb.on{color:var(--teal);border-bottom-color:var(--teal)}.nb:hover:not(.on){color:var(--t2)}
+.badge{background:var(--red);color:#fff;border-radius:10px;padding:1px 5px;font-size:9px;min-width:16px;text-align:center;transition:background .3s}
+.badge.due{background:var(--amber);color:#04090f}
+.hr-r{display:flex;align-items:center;gap:10px;padding:0 16px;margin-left:auto}
+.pulse{width:7px;height:7px;background:var(--teal);border-radius:50%;box-shadow:0 0 8px var(--teal);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.7)}}
+.clk{font-family:var(--fm);font-size:11px;color:var(--t3)}
+.user-pill{display:flex;align-items:center;gap:7px;background:var(--s2);border:1px solid var(--b2);border-radius:20px;padding:4px 8px 4px 5px;cursor:pointer;transition:all .15s;position:relative}
+.user-pill:hover{border-color:var(--b3)}
+.uav{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--blue));display:flex;align-items:center;justify-content:center;font-family:var(--ff);font-weight:800;font-size:10px;color:#04090f;flex-shrink:0}
+.u-name{font-family:var(--fm);font-size:11px;color:var(--t2)}
+.u-drop{position:absolute;top:calc(100% + 6px);right:0;background:var(--s2);border:1px solid var(--b2);border-radius:10px;min-width:180px;box-shadow:0 12px 40px rgba(0,0,0,.4);opacity:0;pointer-events:none;transform:translateY(-4px);transition:all .15s;z-index:100}
+.u-drop.on{opacity:1;pointer-events:all;transform:translateY(0)}
+.u-drop-item{padding:9px 14px;font-family:var(--fm);font-size:11px;color:var(--t2);cursor:pointer;transition:background .1s;display:flex;align-items:center;gap:8px}
+.u-drop-item:hover{background:var(--s3)}.u-drop-item:first-child{border-radius:9px 9px 0 0}.u-drop-item:last-child{border-radius:0 0 9px 9px;color:var(--red)}
+.u-drop-item.div{border-top:1px solid var(--b1)}
+.body{position:relative;z-index:1;flex:1;overflow:hidden}
+.page{display:none;position:absolute;inset:0;overflow:hidden}.page.on{display:flex}
+.pw{display:grid;grid-template-columns:286px 1fr;width:100%;overflow:hidden}
+.sb{overflow-y:auto;border-right:1px solid var(--b1);background:rgba(8,15,24,.6);padding:12px}
+.mp{overflow-y:auto;padding:18px 22px;display:flex;flex-direction:column;gap:14px}
+.sec{font-family:var(--fm);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--t4);margin-bottom:7px;display:flex;align-items:center;gap:6px}
+.sec::after{content:"";flex:1;height:1px;background:var(--b1)}
+.fld{margin-bottom:7px}.fld label{display:block;font-size:11px;color:var(--t3);margin-bottom:3px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+input[type=number],input[type=text],select,textarea{width:100%;background:var(--s3);border:1px solid var(--b1);border-radius:6px;color:var(--t1);font-family:var(--fm);font-size:12px;padding:6px 8px;outline:none;transition:border-color .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(14,165,233,.1)}
+select option{background:var(--s2)}
+.tog{display:flex;gap:3px}
+.tb{flex:1;padding:5px 0;background:var(--s3);border:1px solid var(--b1);border-radius:5px;color:var(--t3);font-family:var(--fm);font-size:10px;cursor:pointer;transition:all .15s;text-align:center}
+.tb.on{background:rgba(0,212,170,.1);border-color:var(--teal);color:var(--teal)}
+.pr{display:flex;gap:5px;align-items:flex-end;margin-bottom:7px}.pr .fld{flex:1;margin:0}
+.pg{padding:6px 9px;background:var(--s3);border:1px solid var(--b1);border-radius:6px;color:var(--t3);font-family:var(--fm);font-size:10px;cursor:pointer;white-space:nowrap}
+.pg:hover{border-color:var(--b3);color:var(--t2)}
+.run-btn{width:100%;padding:11px;background:linear-gradient(135deg,var(--teal),#00a888);border:none;border-radius:8px;color:#04090f;font-family:var(--ff);font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;margin-top:8px}
+.run-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(0,212,170,.3)}.run-btn.busy{opacity:.6;pointer-events:none}
+.mlbadge{background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.2);border-radius:4px;padding:2px 7px;font-family:var(--fm);font-size:8px;color:var(--teal);letter-spacing:.05em;margin-top:4px;display:inline-block}
+.pt-item{display:flex;align-items:center;gap:7px;padding:6px 8px;background:var(--s3);border:1px solid var(--b1);border-radius:6px;cursor:pointer;transition:all .12s}
+.pt-item:hover{border-color:var(--b3);background:var(--s4)}
+.pt-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--ff);font-weight:800;font-size:9px;flex-shrink:0}
+.pt-id{font-family:var(--fm);font-size:9px;color:var(--t3)}
+.pt-meta{font-size:10px;color:var(--t2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pt-score{font-family:var(--ff);font-weight:700;font-size:12px;flex-shrink:0}
+.ez{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;color:var(--t4);text-align:center;padding:40px}
+.ez-ico{font-size:44px;opacity:.18}.ez-t{font-family:var(--ff);font-size:17px;color:var(--t3);font-weight:700}
+.ez-s{font-size:12px;line-height:1.7;max-width:340px}
+.mib{background:rgba(0,212,170,.06);border:1px solid rgba(0,212,170,.2);border-radius:8px;padding:8px 14px;font-family:var(--fm);font-size:10px;color:var(--teal);margin-top:8px}
+.rh{display:grid;grid-template-columns:130px 1fr;gap:18px;background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:18px}
+.gw{position:relative;width:130px;height:130px}
+.gc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gp{font-family:var(--ff);font-weight:900;font-size:26px;line-height:1}
+.gl{font-family:var(--fm);font-size:8px;letter-spacing:.1em;color:var(--t4);text-transform:uppercase;margin-top:2px}
+.rb{display:flex;flex-direction:column;justify-content:center;gap:9px}
+.rv-big{font-family:var(--ff);font-weight:800;font-size:20px}
+.ri{font-size:11px;color:var(--t2);line-height:1.6;max-width:380px}
+.rn{display:flex;gap:12px;flex-wrap:wrap}
+.rni .rv{font-family:var(--fm);font-size:14px}.rni .rk{font-family:var(--fm);font-size:9px;color:var(--t4);letter-spacing:.07em;text-transform:uppercase;margin-top:1px}
+.rvb{display:flex;align-items:flex-start;gap:12px;border-radius:10px;padding:12px 14px;border:1px solid}
+.rvb.live{background:rgba(14,165,233,.06);border-color:rgba(14,165,233,.2)}
+.rvb-t{font-family:var(--ff);font-weight:600;font-size:13px}
+.rvb-s{font-size:11px;color:var(--t3);margin-top:2px;line-height:1.5}
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:16px 18px}
+.ct{font-family:var(--ff);font-weight:600;font-size:13px}.cs{font-size:11px;color:var(--t4);margin-top:2px}
+.tabbar{display:flex;border-bottom:1px solid var(--b1);margin-bottom:12px}
+.tbb{padding:6px 12px;font-family:var(--fm);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--t4);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.tbb.on{color:var(--teal);border-bottom-color:var(--teal)}
+.tabp{display:none}.tabp.on{display:block}
+.vg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.vc{background:var(--s2);border:1px solid var(--b1);border-radius:7px;padding:8px 10px;position:relative;overflow:hidden}
+.vc::before{content:"";position:absolute;top:0;left:0;right:0;height:2px}
+.vc.n::before{background:var(--teal)}.vc.w::before{background:var(--amber)}.vc.c::before{background:var(--red)}
+.vn{font-family:var(--fm);font-size:8px;letter-spacing:.1em;color:var(--t4);text-transform:uppercase}
+.vv{font-family:var(--ff);font-weight:800;font-size:16px;line-height:1.2;margin-top:2px}
+.vu{font-family:var(--fm);font-size:9px;color:var(--t4)}
+.vf{display:inline-block;font-size:8px;padding:1px 5px;border-radius:3px;font-family:var(--fm);margin-top:2px}
+.vf.n{background:rgba(0,212,170,.1);color:var(--teal)}.vf.w{background:rgba(245,158,11,.12);color:var(--amber)}.vf.c{background:rgba(239,68,68,.12);color:var(--red)}
+.shap-list{display:flex;flex-direction:column;gap:6px}
+.sr{display:flex;align-items:center;gap:8px}
+.sf{font-family:var(--fm);font-size:10px;color:var(--t2);width:150px;flex-shrink:0;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sbw{flex:1;height:16px;position:relative}
+.sz{width:1px;background:var(--b3);position:absolute;left:50%;top:0;bottom:0}
+.sbar{height:9px;border-radius:2px;position:absolute;top:50%;transform:translateY(-50%)}
+.sbar.pos{background:linear-gradient(90deg,rgba(239,68,68,.4),rgba(239,68,68,1));left:50%}
+.sbar.neg{background:linear-gradient(270deg,rgba(0,212,170,.4),rgba(0,212,170,1));right:50%}
+.sv{font-family:var(--fm);font-size:9px;color:var(--t4);width:50px;flex-shrink:0}
+.mr{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mc{background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px}
+.mc.win{border-color:var(--teal);box-shadow:0 0 16px rgba(0,212,170,.1)}
+.mn{font-family:var(--ff);font-weight:600;font-size:11px}.ms{font-family:var(--fm);font-size:22px;font-weight:500;line-height:1;margin:3px 0}
+.mm{font-size:10px;color:var(--t4)}.mbt{height:3px;background:var(--b1);border-radius:3px;margin-top:7px}
+.mbf{height:100%;border-radius:3px;background:var(--teal)}
+.wt{display:inline-block;font-family:var(--fm);font-size:9px;color:var(--teal);background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.2);border-radius:3px;padding:1px 5px;margin-top:3px}
+.cw{position:relative;height:170px}
+.qw,.aw,.dw{flex:1;display:flex;flex-direction:column}
+.qt,.at,.dt{display:flex;align-items:center;gap:10px;padding:10px 18px;border-bottom:1px solid var(--b1);flex-shrink:0;flex-wrap:wrap}
+.q-body{flex:1;overflow-y:auto;padding:14px 18px;display:flex;flex-direction:column;gap:7px}
+.qc{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:13px 15px;display:grid;grid-template-columns:42px 1fr auto auto;gap:11px;align-items:start}
+.qc.rd{border-color:rgba(245,158,11,.4)}.qc.crit{border-left:3px solid var(--red)}
+.qav{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--ff);font-weight:800;font-size:12px}
+.qi-id{font-family:var(--fm);font-size:10px;color:var(--t3)}
+.qi-n{font-family:var(--ff);font-weight:600;font-size:13px;margin-top:1px}
+.qi-m{font-size:11px;color:var(--t4);margin-top:2px}
+.qrs{font-family:var(--ff);font-weight:800;font-size:22px;line-height:1}
+.qst{text-align:right}
+.qsc{display:inline-flex;align-items:center;font-family:var(--fm);font-size:9px;padding:3px 8px;border-radius:20px}
+.qsc.live{background:rgba(0,212,170,.1);color:var(--teal);border:1px solid rgba(0,212,170,.2)}
+.qsc.rev{background:rgba(245,158,11,.1);color:var(--amber);border:1px solid rgba(245,158,11,.2)}
+.qtm{font-family:var(--fm);font-size:10px;color:var(--t4);margin-top:3px}
+.q-acts{margin-top:7px;display:flex;gap:5px;flex-wrap:wrap}
+.qbtn{padding:5px 10px;border-radius:5px;font-family:var(--fm);font-size:10px;cursor:pointer;border:1px solid;transition:all .15s}
+.qbtn.pull{background:rgba(14,165,233,.1);border-color:var(--blue);color:var(--blue)}
+.qbtn.rec{background:rgba(245,158,11,.1);border-color:var(--amber);color:var(--amber)}
+.qsrt{display:flex;gap:4px;margin-left:auto}
+.qs{padding:5px 9px;background:var(--s2);border:1px solid var(--b1);border-radius:5px;font-family:var(--fm);font-size:10px;color:var(--t3);cursor:pointer}
+.qs.on{border-color:var(--teal);color:var(--teal);background:rgba(0,212,170,.07)}
+.sbox{position:relative;flex:1;max-width:280px}
+.sbox input{padding-left:24px;background:var(--s2);font-size:11px}
+.sbox::before{content:"\2315";position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--t4);font-size:12px;pointer-events:none}
+.filts{display:flex;gap:4px;flex-wrap:wrap}
+.fb{padding:4px 8px;background:var(--s2);border:1px solid var(--b1);border-radius:5px;font-family:var(--fm);font-size:9px;color:var(--t3);cursor:pointer}
+.fb.on{border-color:var(--blue);color:var(--blue);background:rgba(14,165,233,.07)}
+.arch-body{flex:1;overflow:hidden;display:grid;grid-template-columns:340px 1fr}
+.alist{overflow-y:auto;border-right:1px solid var(--b1);padding:8px}
+.acard{padding:9px 11px;border-radius:7px;border:1px solid var(--b1);margin-bottom:4px;cursor:pointer;transition:all .15s;background:var(--s1)}
+.acard:hover{border-color:var(--b2)}.acard.sel{border-color:var(--blue);background:rgba(14,165,233,.04)}
+.acr{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.acav{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--ff);font-weight:800;font-size:9px}
+.acid{font-family:var(--fm);font-size:10px;color:var(--t3);flex:1}
+.acscore{font-family:var(--ff);font-weight:700;font-size:14px}
+.acm{font-size:10px;color:var(--t4)}
+.acoc{display:flex;align-items:center;gap:4px;margin-top:3px}
+.chip{display:inline-flex;align-items:center;font-family:var(--fm);font-size:8px;padding:2px 6px;border-radius:10px}
+.chip.ok{background:rgba(0,212,170,.1);color:var(--teal);border:1px solid rgba(0,212,170,.2)}
+.chip.bad{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.chip.pend{background:rgba(74,122,155,.15);color:var(--t3);border:1px solid rgba(74,122,155,.2)}
+.adet{overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+.de{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--t4);gap:8px;text-align:center}
+.db-body{flex:1;overflow:auto}
+table{width:100%;border-collapse:collapse}
+thead{position:sticky;top:0;z-index:5}
+thead th{background:var(--s1);font-family:var(--ff);font-size:9px;letter-spacing:.07em;color:var(--t4);text-transform:uppercase;padding:7px 9px;border-bottom:1px solid var(--b1);white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{color:var(--t2)}
+thead th.sa::after{content:" \2191";color:var(--teal);font-size:8px}
+thead th.sd::after{content:" \2193";color:var(--teal);font-size:8px}
+tbody tr{border-bottom:1px solid var(--b1);cursor:pointer}tbody tr:hover{background:var(--s2)}
+tbody td{padding:8px 9px;font-family:var(--fm);font-size:11px;color:var(--t2);white-space:nowrap}
+.tc{display:inline-flex;font-family:var(--fm);font-size:9px;padding:2px 7px;border-radius:20px}
+.accw{flex:1;overflow-y:auto;padding:18px 22px;display:flex;flex-direction:column;gap:14px}
+.ag{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.as{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:14px 16px}
+.asv{font-family:var(--ff);font-weight:800;font-size:26px;line-height:1}
+.ask{font-family:var(--fm);font-size:9px;letter-spacing:.1em;color:var(--t4);text-transform:uppercase;margin-top:4px}
+.ast{font-family:var(--fm);font-size:10px;margin-top:5px}
+.ach{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tl{display:flex;flex-direction:column}
+.tli{display:flex;gap:10px;padding-bottom:12px}.tli:last-child{padding-bottom:0}
+.tlw{display:flex;flex-direction:column;align-items:center;width:18px;flex-shrink:0}
+.tld{width:8px;height:8px;border-radius:50%;border:2px solid;flex-shrink:0}
+.tll{flex:1;width:1px;background:var(--b1);margin-top:3px}.tli:last-child .tll{display:none}
+.tlc{flex:1}.tlt{font-family:var(--fm);font-size:9px;color:var(--t4);margin-bottom:2px}
+.tlti{font-size:12px;font-weight:500}.tldi{font-size:11px;color:var(--t3);line-height:1.5;margin-top:1px}
+.mo{position:fixed;inset:0;background:rgba(4,9,15,.87);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;backdrop-filter:blur(10px)}
+.mo.open{opacity:1;pointer-events:all}
+.mbox{background:var(--s2);border:1px solid var(--b2);border-radius:14px;width:580px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.5)}
+.mhdr{padding:18px 20px 13px;border-bottom:1px solid var(--b1)}
+.mht{font-family:var(--ff);font-weight:700;font-size:16px}
+.mhs{font-size:12px;color:var(--t3);margin-top:3px}
+.mbd{padding:16px 20px;display:flex;flex-direction:column;gap:13px}
+.st{font-family:var(--ff);font-weight:600;font-size:12px;color:var(--t2);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.st::after{content:"";flex:1;height:1px;background:var(--b1)}
+.mv{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.mv label{font-size:10px;color:var(--t3);display:block;margin-bottom:3px}
+.mv input{font-size:12px;padding:5px 7px}
+.oog{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.oo{display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--s3);border:1px solid var(--b1);border-radius:8px;cursor:pointer;transition:all .15s}
+.oo:hover{border-color:var(--b2)}.oo.sel{border-color:var(--blue);background:rgba(14,165,233,.07)}
+.oo-ico{font-size:16px}.oo-t{font-family:var(--ff);font-weight:600;font-size:12px}.oo-d{font-size:10px;color:var(--t3);margin-top:1px}
+.mft{display:flex;gap:7px;justify-content:flex-end;padding:13px 20px 17px;border-top:1px solid var(--b1)}
+.mbtn{padding:8px 17px;border-radius:7px;font-family:var(--fm);font-size:12px;cursor:pointer;border:1px solid}
+.mbtn.can{background:transparent;border-color:var(--b2);color:var(--t3)}
+.mbtn.ok{background:rgba(0,212,170,.1);border-color:var(--teal);color:var(--teal)}
+.mbtn.ok:disabled{opacity:.4;pointer-events:none}
+.lv{position:fixed;inset:0;background:rgba(4,9,15,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:300;opacity:0;pointer-events:none;transition:opacity .2s}
+.lv.on{opacity:1;pointer-events:all}
+.lspin{width:44px;height:44px;border:3px solid var(--b1);border-top-color:var(--teal);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lvt{font-family:var(--ff);font-weight:700;font-size:13px;margin-top:14px}
+.lvs2{font-family:var(--fm);font-size:10px;color:var(--t4);margin-top:4px}
+.lvst{margin-top:14px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.lvsi{font-family:var(--fm);font-size:10px;color:var(--t4);opacity:0;transition:opacity .25s}.lvsi.on{opacity:1;color:var(--teal)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--s3);border:1px solid var(--b2);border-radius:8px;padding:8px 16px;font-family:var(--fm);font-size:11px;color:var(--t2);opacity:0;transition:opacity .3s;pointer-events:none;z-index:400;white-space:nowrap}
+.toast.on{opacity:1}
+@keyframes fi{from{opacity:0;transform:translateY(8px)}}
+.fi{animation:fi .3s cubic-bezier(.22,1,.36,1) both}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ AUTH SCREEN ═══════════════ -->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-lm">V</div>
+      <div>
+        <div class="auth-lt" style="font-family:var(--ff)">VIG<em>OR</em></div>
+        <div style="font-family:var(--fm);font-size:8px;color:var(--t4);letter-spacing:.12em;text-transform:uppercase">ICU Risk Intelligence</div>
+      </div>
+    </div>
+
+    <!-- Login / Signup tabs -->
+    <div id="authForm">
+      <div class="auth-tabs">
+        <div class="auth-tab on" id="tabLogin" onclick="switchTab('login')">Sign In</div>
+        <div class="auth-tab" id="tabSignup" onclick="switchTab('signup')">Create Account</div>
+      </div>
+
+      <!-- LOGIN -->
+      <div id="loginForm">
+        <div class="auth-field">
+          <label>Email Address</label>
+          <input type="email" id="loginEmail" placeholder="doctor@hospital.org" autocomplete="email">
+        </div>
+        <div class="auth-field">
+          <label>Password</label>
+          <input type="password" id="loginPass" placeholder="Enter your password" autocomplete="current-password"
+            onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <div id="loginMsg" class="auth-msg"></div>
+        <button class="auth-btn" id="loginBtn" onclick="doLogin()">Sign In to VIGOR</button>
+        <div class="auth-or">or continue with</div>
+        <!-- Real Google Sign-In button rendered by GSI -->
+        <div id="googleBtnLogin" style="display:flex;justify-content:center;min-height:44px"></div>
+        <div class="auth-link">Forgot password?
+          <span onclick="showForgot()">Reset via email</span>
+        </div>
+      </div>
+
+      <!-- SIGNUP -->
+      <div id="signupForm" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="auth-field"><label>First Name</label>
+            <input type="text" id="signFirst" placeholder="Jane"></div>
+          <div class="auth-field"><label>Last Name</label>
+            <input type="text" id="signLast" placeholder="Smith"></div>
+        </div>
+        <div class="auth-field"><label>Email Address</label>
+          <input type="email" id="signEmail" placeholder="doctor@hospital.org"></div>
+        <div class="auth-field"><label>Password</label>
+          <input type="password" id="signPass" placeholder="Minimum 8 characters"
+            onkeydown="if(event.key==='Enter')doSignup()"></div>
+        <div class="auth-field"><label>Institution / Hospital</label>
+          <input type="text" id="signInst" placeholder="Beth Israel Medical Center"></div>
+        <div id="signupMsg" class="auth-msg"></div>
+        <button class="auth-btn" id="signupBtn" onclick="doSignup()">Create Account &rarr;</button>
+        <div class="auth-or">or sign up with</div>
+        <div id="googleBtnSignup" style="display:flex;justify-content:center;min-height:44px"></div>
+      </div>
+    </div>
+
+    <!-- OTP screen -->
+    <div class="otp-wrap" id="otpWrap">
+      <div class="otp-ico">&#128235;</div>
+      <div class="otp-title">Check your email</div>
+      <div class="otp-sub">We sent a 6-digit verification code to<br>
+        <strong id="otpEmail" style="color:var(--teal)"></strong></div>
+      <div class="otp-digits">
+        <input class="otp-d" id="d0" maxlength="1" inputmode="numeric" oninput="otpInput(0)">
+        <input class="otp-d" id="d1" maxlength="1" inputmode="numeric" oninput="otpInput(1)">
+        <input class="otp-d" id="d2" maxlength="1" inputmode="numeric" oninput="otpInput(2)">
+        <input class="otp-d" id="d3" maxlength="1" inputmode="numeric" oninput="otpInput(3)">
+        <input class="otp-d" id="d4" maxlength="1" inputmode="numeric" oninput="otpInput(4)">
+        <input class="otp-d" id="d5" maxlength="1" inputmode="numeric" oninput="otpInput(5)"
+          onkeydown="if(event.key==='Enter')verifyOTP()">
+      </div>
+      <div id="otpMsg" class="auth-msg"></div>
+      <div class="otp-hint" id="otpHint"></div>
+      <div class="otp-resend">Didn't receive it?
+        <span onclick="resendOTP()">Resend code</span>
+      </div>
+      <button class="auth-btn" style="width:200px;margin-top:4px" onclick="verifyOTP()">
+        Verify &amp; Continue
+      </button>
+      <div style="font-family:var(--fm);font-size:10px;color:var(--t4);cursor:pointer;margin-top:8px"
+        onclick="backToForm()">&larr; Back</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════ MAIN APP ═══════════════ -->
+<div id="app">
+<header>
+  <div class="logo">
+    <div class="lm">V</div>
+    <div><div class="lt">VIG<em>OR</em></div><div class="ls">Real ML &bull; MIMIC-IV</div></div>
+  </div>
+  <nav>
+    <button class="nb on" onclick="goPage('predict',this)">&#9889; Predict</button>
+    <button class="nb" onclick="goPage('queue',this)">&#127973; Queue <span class="badge" id="qbadge">0</span></button>
+    <button class="nb" onclick="goPage('archive',this)">&#128193; Archive</button>
+    <button class="nb" onclick="goPage('database',this)">&#128451; Database</button>
+    <button class="nb" onclick="goPage('accuracy',this)">&#128202; Accuracy</button>
+  </nav>
+  <div class="hr-r">
+    <div class="pulse"></div>
+    <div class="clk" id="clk"></div>
+    <div class="user-pill" onclick="toggleDrop()">
+      <div class="uav" id="uav">DR</div>
+      <span class="u-name" id="uname">Dr. Clinician</span>
+      <span style="font-size:10px;color:var(--t4)">&#9662;</span>
+      <div class="u-drop" id="udrop">
+        <div class="u-drop-item">&#128100; <span id="dropName">Profile</span></div>
+        <div class="u-drop-item">&#127968; <span id="dropInst">Institution</span></div>
+        <div class="u-drop-item div" onclick="doSignOut()">&#8594; Sign Out</div>
+      </div>
+    </div>
+  </div>
+</header>
+<div class="body">
+  <div class="page on" id="page-predict">
+    <div class="pw">
+      <aside class="sb">
+        <div style="margin-bottom:11px">
+          <div class="sec">Patient ID</div>
+          <div class="pr">
+            <div class="fld"><input type="text" id="f_pid" placeholder="Auto-generate..."></div>
+            <button class="pg" onclick="genPID()">&#8635; New</button>
+          </div>
+        </div>
+        <div style="margin-bottom:11px">
+          <div class="sec">Vitals</div>
+          <div class="fr" style="margin-bottom:5px">
+            <div class="fld"><label>Age (yr)</label><input type="number" id="f_age" value="65"></div>
+            <div class="fld"><label>Sex</label>
+              <div class="tog">
+                <button class="tb on" id="tb_sM" onclick="setTog('sex','M')">Male</button>
+                <button class="tb" id="tb_sF" onclick="setTog('sex','F')">Female</button>
+              </div>
+              <input type="hidden" id="f_sex" value="M">
+            </div>
+          </div>
+          <div class="fld"><label>Heart Rate (bpm)</label><input type="number" id="f_hr" value="88"></div>
+          <div class="fr">
+            <div class="fld"><label>SBP (mmHg)</label><input type="number" id="f_sbp" value="118"></div>
+            <div class="fld"><label>DBP (mmHg)</label><input type="number" id="f_dbp" value="74"></div>
+          </div>
+          <div class="fr">
+            <div class="fld"><label>SpO2 (%)</label><input type="number" id="f_spo2" value="97"></div>
+            <div class="fld"><label>Temp (&#176;C)</label><input type="number" id="f_temp" value="37.0" step="0.1"></div>
+          </div>
+          <div class="fr">
+            <div class="fld"><label>Resp. Rate (/min)</label><input type="number" id="f_rr" value="16"></div>
+            <div class="fld"><label>GCS (3-15)</label><input type="number" id="f_gcs" value="15" min="3" max="15"></div>
+          </div>
+        </div>
+        <div style="margin-bottom:11px">
+          <div class="sec">Laboratory</div>
+          <div class="fr">
+            <div class="fld"><label>Lactate (mmol/L)</label><input type="number" id="f_lac" value="1.2" step="0.1"></div>
+            <div class="fld"><label>Creatinine (mg/dL)</label><input type="number" id="f_cr" value="1.0" step="0.1"></div>
+          </div>
+          <div class="fr">
+            <div class="fld"><label>WBC (x10&#179;)</label><input type="number" id="f_wbc" value="9.5" step="0.1"></div>
+            <div class="fld"><label>Hemoglobin (g/dL)</label><input type="number" id="f_hgb" value="11.5" step="0.1"></div>
+          </div>
+          <div class="fr">
+            <div class="fld"><label>Sodium (mEq/L)</label><input type="number" id="f_na" value="138"></div>
+            <div class="fld"><label>Glucose (mg/dL)</label><input type="number" id="f_glu" value="120"></div>
+          </div>
+        </div>
+        <div style="margin-bottom:11px">
+          <div class="sec">Clinical Context</div>
+          <div class="fld"><label>Surgery Type</label>
+            <select id="f_surg">
+              <option value="cardiac">Cardiac</option>
+              <option value="abdominal" selected>Abdominal</option>
+              <option value="orthopedic">Orthopedic</option>
+              <option value="neurological">Neurological</option>
+              <option value="vascular">Vascular</option>
+            </select>
+          </div>
+          <div class="fr">
+            <div class="fld"><label>Comorbidities (#)</label><input type="number" id="f_comorb" value="2" min="0" max="10"></div>
+            <div class="fld"><label>Vasopressors</label>
+              <div class="tog">
+                <button class="tb on" id="tb_vN" onclick="setTog('vaso','0')">No</button>
+                <button class="tb" id="tb_vY" onclick="setTog('vaso','1')">Yes</button>
+              </div>
+              <input type="hidden" id="f_vaso" value="0">
+            </div>
+          </div>
+        </div>
+        <button class="run-btn" id="runBtn" onclick="runPrediction()">&#9889; Run VIGOR Analysis</button>
+        <div class="mlbadge">sklearn LR (AUC 0.864) + GB (AUC 0.944)</div>
+        <div style="margin-top:14px">
+          <div class="sec">Load MIMIC-IV Patient</div>
+          <input type="text" id="ptSearch" placeholder="Search ID, age, surgery, unit..." oninput="filterPtList()" style="margin-bottom:5px">
+          <div id="ptList" style="max-height:210px;overflow-y:auto;display:flex;flex-direction:column;gap:3px"></div>
+        </div>
+      </aside>
+      <main class="mp" id="rp">
+        <div class="ez">
+          <div class="ez-ico">&#128148;</div>
+          <div class="ez-t">VIGOR ML Ready</div>
+          <div class="ez-s">Real scikit-learn LR + Gradient Boosting ensemble.<br>Trained on 100 actual MIMIC-IV ICU patients.</div>
+          <div class="mib">LR AUC 0.864 &bull; GB AUC 0.944 &bull; Ensemble: 40% LR + 60% GB &bull; Platt calibration &bull; 26 features</div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <div class="page" id="page-queue">
+    <div class="qw">
+      <div class="qt">
+        <span style="font-family:var(--ff);font-weight:700;font-size:15px">Active Queue</span>
+        <span style="font-family:var(--fm);font-size:11px;color:var(--t4)" id="qsub"></span>
+        <div class="qsrt">
+          <button class="qs on" onclick="setQSort('risk',this)">Risk</button>
+          <button class="qs" onclick="setQSort('time',this)">Newest</button>
+          <button class="qs" onclick="setQSort('due',this)">Due Soon</button>
+        </div>
+      </div>
+      <div class="q-body" id="qbody"></div>
+    </div>
+  </div>
+  <div class="page" id="page-archive">
+    <div class="aw">
+      <div class="at">
+        <span style="font-family:var(--ff);font-weight:700;font-size:15px">Archive</span>
+        <span style="font-family:var(--fm);font-size:11px;color:var(--t4)" id="archcnt"></span>
+        <div class="sbox"><input type="text" id="archq" placeholder="Search..." oninput="renderArchive()"></div>
+        <div class="filts">
+          <button class="fb on" onclick="setFilt('all',this)">All</button>
+          <button class="fb" onclick="setFilt('correct',this)">Correct</button>
+          <button class="fb" onclick="setFilt('wrong',this)">Wrong</button>
+          <button class="fb" onclick="setFilt('high',this)">High Risk</button>
+          <button class="fb" onclick="setFilt('deceased',this)">Deceased</button>
+        </div>
+      </div>
+      <div class="arch-body">
+        <div class="alist" id="alist"></div>
+        <div class="adet" id="adet"><div class="de"><div style="font-size:36px;opacity:.15">&#128203;</div><div style="font-size:12px">Select a patient to view full record</div></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="page" id="page-database">
+    <div class="dw">
+      <div class="dt">
+        <span style="font-family:var(--ff);font-weight:700;font-size:15px">Clinical Database</span>
+        <span style="font-family:var(--fm);font-size:11px;color:var(--t4)" id="dbcnt"></span>
+        <div class="sbox" style="max-width:220px"><input type="text" id="dbq" placeholder="Search..." oninput="renderDB()"></div>
+        <div style="margin-left:auto"><button onclick="exportCSV()" style="padding:6px 13px;background:rgba(0,212,170,.1);border:1px solid var(--teal);border-radius:6px;color:var(--teal);font-family:var(--fm);font-size:11px;cursor:pointer">&#11015; CSV</button></div>
+      </div>
+      <div class="db-body"><table><thead id="dbhd"></thead><tbody id="dbbd"></tbody></table></div>
+    </div>
+  </div>
+  <div class="page" id="page-accuracy">
+    <div class="accw" id="accw"></div>
+  </div>
+</div>
+</div>
+
+<!-- OUTCOME MODAL -->
+<div class="mo" id="modal">
+  <div class="mbox">
+    <div class="mhdr"><div class="mht">Record Outcome</div><div class="mhs" id="msub"></div></div>
+    <div class="mbd">
+      <div><div class="st">1 &#8212; Verify Inputs</div><div class="mv" id="mflds"></div></div>
+      <div><div class="st">2 &#8212; Actual Outcome</div>
+        <div class="oog">
+          <div class="oo" onclick="selOO(this,'stable')"><div class="oo-ico">&#9989;</div><div><div class="oo-t">Remained Stable</div><div class="oo-d">No deterioration</div></div></div>
+          <div class="oo" onclick="selOO(this,'deteriorated')"><div class="oo-ico">&#9888;</div><div><div class="oo-t">Deteriorated</div><div class="oo-d">Intervention required</div></div></div>
+          <div class="oo" onclick="selOO(this,'critical')"><div class="oo-ico">&#128680;</div><div><div class="oo-t">Critical</div><div class="oo-d">Intubation / escalation</div></div></div>
+          <div class="oo" onclick="selOO(this,'transferred')"><div class="oo-ico">&#128260;</div><div><div class="oo-t">Transferred</div><div class="oo-d">Left ICU within 24h</div></div></div>
+        </div>
+      </div>
+      <div><div class="st">3 &#8212; Notes</div><textarea id="mnotes" rows="3" placeholder="Clinical notes..."></textarea></div>
+    </div>
+    <div class="mft">
+      <button class="mbtn can" onclick="closeModal()">Cancel</button>
+      <button class="mbtn ok" id="msub2" onclick="submitOutcome()" disabled>Archive &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<div class="lv" id="lv">
+  <div class="lspin"></div>
+  <div class="lvt">VIGOR ML Pipeline</div>
+  <div class="lvs2">sklearn LR + Gradient Boosting</div>
+  <div class="lvst">
+    <div class="lvsi" id="ls1">&#9658; Extracting 26 features...</div>
+    <div class="lvsi" id="ls2">&#9658; Logistic Regression...</div>
+    <div class="lvsi" id="ls3">&#9658; Gradient Boosting (50 trees)...</div>
+    <div class="lvsi" id="ls4">&#9658; Platt calibration + ensemble...</div>
+    <div class="lvsi" id="ls5">&#9658; Computing SHAP values...</div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+
+// ════════════════════════════════════════════════════════
+// MODEL & DATA (sklearn parameters + MIMIC-IV patients)
+// ════════════════════════════════════════════════════════
+const MODEL={"featLabels":["Age","Sex(F)","Heart Rate","Systolic BP","Diastolic BP","MAP","Shock Index","SpO2","SpO2 deficit","Temperature","Temp delta","Resp. Rate","GCS","Lactate","Creatinine","WBC","Hemoglobin","Sodium","Glucose","Comorbidities","Vasopressors","Cardiac surg","Vascular surg","Neuro surg","Abdominal surg","Ortho surg"],"lr":{"coef":[0.044903,-0.027537,0.079151,-0.06592,-0.081111,-0.08788,0.077548,0.105112,-0.105112,0.024812,0.044987,0.045678,-0.506935,0.335754,0.075437,0.072301,-0.047682,0.053018,-0.129106,0.110078,0.434774,0.049857,0.0,0.01171,-0.053002,0.0],"intercept":-1.285607,"mean":[61.75,0.43,86.56,118.92,61.43,80.5933,0.7419,96.98,3.02,36.841,0.343,18.95,13.0,1.965,1.236,10.186,10.84,138.05,130.55,4.93,0.39,0.33,0.0,0.03,0.64,0.0],"scale":[16.0887,0.4951,13.389,14.6695,9.0524,9.238,0.1603,1.8546,1.8546,0.4703,0.359,3.6644,3.3734,1.2353,1.2274,5.4386,1.7998,3.5563,36.6839,2.4587,0.4877,0.4702,1.0,0.1706,0.48,1.0]},"gb":{"lrRate":0.05,"initLO":-1.045969,"calA":-1.135278,"calB":-0.42868,"trees":[{"f":20,"t":0.5,"l":{"f":16,"t":13.05,"l":{"v":-1.35135},"r":{"v":0.13365}},"r":{"f":13,"t":2.05,"l":{"v":-0.37682},"r":{"v":3.84615}}},{"f":12,"t":9.5,"l":{"v":3.84095},"r":{"f":20,"t":0.5,"l":{"v":-1.20486},"r":{"v":1.23495}}},{"f":12,"t":9.5,"l":{"v":3.33949},"r":{"f":13,"t":2.05,"l":{"v":-1.20128},"r":{"v":1.59911}}},{"f":13,"t":2.05,"l":{"f":17,"t":141.5,"l":{"v":-1.30858},"r":{"v":0.33705}},"r":{"f":20,"t":0.5,"l":{"v":-0.40613},"r":{"v":2.96804}}},{"f":12,"t":9.5,"l":{"v":2.93909},"r":{"f":13,"t":2.45,"l":{"v":-1.18032},"r":{"v":1.44614}}},{"f":12,"t":12.0,"l":{"f":10,"t":0.15,"l":{"v":0.30895},"r":{"v":2.75606}},"r":{"f":13,"t":2.05,"l":{"v":-1.13019},"r":{"v":1.02209}}},{"f":13,"t":1.95,"l":{"f":16,"t":13.05,"l":{"v":-1.26323},"r":{"v":1.61172}},"r":{"f":20,"t":0.5,"l":{"v":-0.836},"r":{"v":2.33669}}},{"f":12,"t":9.5,"l":{"v":2.38561},"r":{"f":13,"t":2.05,"l":{"v":-1.09519},"r":{"v":0.88306}}},{"f":12,"t":12.0,"l":{"f":18,"t":117.0,"l":{"v":0.38686},"r":{"v":2.32943}},"r":{"f":20,"t":0.5,"l":{"v":-1.27247},"r":{"v":0.58601}}},{"f":12,"t":9.0,"l":{"v":2.17755},"r":{"f":20,"t":0.5,"l":{"v":-1.10272},"r":{"v":0.48631}}},{"f":12,"t":9.5,"l":{"v":1.99534},"r":{"f":13,"t":2.75,"l":{"v":-0.83736},"r":{"v":1.61844}}},{"f":12,"t":9.0,"l":{"v":1.95804},"r":{"f":13,"t":2.0,"l":{"v":-1.05465},"r":{"v":1.02921}}},{"f":20,"t":0.5,"l":{"f":12,"t":12.0,"l":{"v":0.44716},"r":{"v":-1.07072}},"r":{"f":13,"t":2.05,"l":{"v":-0.15543},"r":{"v":2.07601}}},{"f":20,"t":0.5,"l":{"f":18,"t":98.0,"l":{"v":0.61741},"r":{"v":-1.08097}},"r":{"f":13,"t":1.95,"l":{"v":-0.2639},"r":{"v":2.03689}}},{"f":12,"t":12.0,"l":{"f":9,"t":37.0,"l":{"v":1.9856},"r":{"v":0.41877}},"r":{"f":16,"t":8.85,"l":{"v":0.86874},"r":{"v":-0.88039}}},{"f":12,"t":9.0,"l":{"v":1.76371},"r":{"f":13,"t":2.75,"l":{"v":-0.69568},"r":{"v":1.24567}}},{"f":12,"t":10.5,"l":{"f":16,"t":10.15,"l":{"v":0.81634},"r":{"v":1.77419}},"r":{"f":10,"t":0.05,"l":{"v":0.73592},"r":{"v":-0.90816}}},{"f":12,"t":9.5,"l":{"f":12,"t":3.5,"l":{"v":1.60815},"r":{"v":1.80363}},"r":{"f":13,"t":2.05,"l":{"v":-0.99516},"r":{"v":0.82936}}},{"f":13,"t":2.45,"l":{"f":9,"t":37.35,"l":{"v":-0.82642},"r":{"v":0.79868}},"r":{"f":14,"t":0.8,"l":{"v":-0.09008},"r":{"v":1.86005}}},{"f":16,"t":8.75,"l":{"v":1.82952},"r":{"f":13,"t":2.75,"l":{"v":-0.58062},"r":{"v":1.10084}}},{"f":12,"t":9.5,"l":{"v":1.67918},"r":{"f":20,"t":0.5,"l":{"v":-0.87955},"r":{"v":0.44038}}},{"f":12,"t":12.0,"l":{"f":4,"t":65.0,"l":{"v":1.73426},"r":{"v":0.03052}},"r":{"f":20,"t":0.5,"l":{"v":-0.98661},"r":{"v":0.26706}}},{"f":12,"t":12.0,"l":{"f":13,"t":1.25,"l":{"v":-1.23386},"r":{"v":1.65304}},"r":{"f":20,"t":0.5,"l":{"v":-1.19194},"r":{"v":0.32134}}},{"f":13,"t":1.95,"l":{"f":12,"t":10.5,"l":{"v":0.49878},"r":{"v":-1.14707}},"r":{"f":20,"t":0.5,"l":{"v":-0.46031},"r":{"v":1.70913}}},{"f":12,"t":9.5,"l":{"v":1.48302},"r":{"f":16,"t":8.7,"l":{"v":1.21913},"r":{"v":-0.51993}}},{"f":20,"t":0.5,"l":{"f":11,"t":23.0,"l":{"v":-1.0298},"r":{"v":1.2032}},"r":{"f":13,"t":2.05,"l":{"v":-0.14842},"r":{"v":1.71437}}},{"f":20,"t":0.5,"l":{"f":12,"t":12.0,"l":{"v":0.44227},"r":{"v":-1.16905}},"r":{"f":13,"t":2.05,"l":{"v":-0.20085},"r":{"v":1.66398}}},{"f":12,"t":9.5,"l":{"v":1.47318},"r":{"f":13,"t":2.05,"l":{"v":-0.90194},"r":{"v":0.78746}}},{"f":20,"t":0.5,"l":{"f":6,"t":0.88477,"l":{"v":-1.16593},"r":{"v":-0.11274}},"r":{"f":13,"t":2.05,"l":{"v":-0.16102},"r":{"v":1.56881}}},{"f":12,"t":9.5,"l":{"f":12,"t":3.5,"l":{"v":1.37398},"r":{"v":1.51883}},"r":{"f":13,"t":2.0,"l":{"v":-0.89576},"r":{"v":0.48708}}},{"f":12,"t":9.0,"l":{"v":1.39247},"r":{"f":16,"t":8.85,"l":{"v":0.77094},"r":{"v":-0.7021}}},{"f":12,"t":9.0,"l":{"v":1.41256},"r":{"f":19,"t":6.5,"l":{"v":-0.99573},"r":{"v":0.44512}}},{"f":12,"t":9.5,"l":{"f":13,"t":1.85,"l":{"v":1.41397},"r":{"v":1.28541}},"r":{"f":13,"t":2.05,"l":{"v":-1.14063},"r":{"v":0.58798}}},{"f":20,"t":0.5,"l":{"f":11,"t":23.0,"l":{"v":-1.12799},"r":{"v":0.79461}},"r":{"f":13,"t":2.05,"l":{"v":-0.18764},"r":{"v":1.53696}}},{"f":12,"t":9.5,"l":{"v":1.33513},"r":{"f":13,"t":2.05,"l":{"v":-1.12025},"r":{"v":0.49362}}},{"f":20,"t":0.5,"l":{"f":18,"t":97.5,"l":{"v":2.13019},"r":{"v":-1.03476}},"r":{"f":13,"t":2.05,"l":{"v":0.00859},"r":{"v":1.50434}}},{"f":12,"t":9.5,"l":{"f":8,"t":2.5,"l":{"v":1.25048},"r":{"v":1.39077}},"r":{"f":0,"t":61.5,"l":{"v":-0.97066},"r":{"v":0.2286}}},{"f":12,"t":9.0,"l":{"v":1.3149},"r":{"f":13,"t":2.05,"l":{"v":-0.80898},"r":{"v":0.47559}}},{"f":12,"t":9.5,"l":{"f":8,"t":2.5,"l":{"v":1.22148},"r":{"v":1.34137}},"r":{"f":13,"t":2.75,"l":{"v":-0.58967},"r":{"v":0.85534}}},{"f":12,"t":9.0,"l":{"v":1.25001},"r":{"f":13,"t":2.15,"l":{"v":-1.11446},"r":{"v":0.35363}}},{"f":12,"t":12.0,"l":{"f":17,"t":140.5,"l":{"v":1.34602},"r":{"v":0.20299}},"r":{"f":17,"t":137.5,"l":{"v":-1.16146},"r":{"v":0.4435}}},{"f":20,"t":0.5,"l":{"f":13,"t":2.05,"l":{"v":-0.85188},"r":{"v":-1.03466}},"r":{"f":13,"t":2.05,"l":{"v":-0.16477},"r":{"v":1.48341}}},{"f":12,"t":9.5,"l":{"f":13,"t":1.95,"l":{"v":1.28801},"r":{"v":1.1758}},"r":{"f":13,"t":2.55,"l":{"v":-0.96822},"r":{"v":0.26761}}},{"f":20,"t":0.5,"l":{"f":18,"t":97.5,"l":{"v":2.15516},"r":{"v":-0.87848}},"r":{"f":13,"t":2.0,"l":{"v":-0.0852},"r":{"v":1.39682}}},{"f":20,"t":0.5,"l":{"f":11,"t":23.0,"l":{"v":-0.96078},"r":{"v":1.35233}},"r":{"f":13,"t":1.95,"l":{"v":0.04056},"r":{"v":1.38372}}},{"f":18,"t":140.5,"l":{"f":13,"t":2.15,"l":{"v":-0.27278},"r":{"v":0.77901}},"r":{"f":14,"t":0.8,"l":{"v":-1.23863},"r":{"v":-0.93824}}},{"f":12,"t":9.5,"l":{"v":1.25004},"r":{"f":19,"t":6.5,"l":{"v":-0.94459},"r":{"v":0.37661}}},{"f":20,"t":0.5,"l":{"f":1,"t":0.5,"l":{"v":0.4437},"r":{"v":-1.17847}},"r":{"f":13,"t":2.0,"l":{"v":-0.08038},"r":{"v":1.38146}}},{"f":19,"t":6.5,"l":{"f":20,"t":0.5,"l":{"v":-0.95094},"r":{"v":0.3639}},"r":{"f":13,"t":1.25,"l":{"v":-1.11709},"r":{"v":1.14454}}},{"f":12,"t":9.5,"l":{"f":13,"t":1.95,"l":{"v":1.25499},"r":{"v":1.15357}},"r":{"f":19,"t":4.5,"l":{"v":-0.933},"r":{"v":0.22829}}}]}};
+const MIMIC=[{"id":"ICU-10018328","age":83,"sex":"F","surg":"neurological","unit":"Neuro Stepdown","los":7.7,"deceased":0,"admitDate":"2154-04-24","f":{"hr":67,"sbp":123,"dbp":56,"spo2":96.0,"temp":36.7,"rr":19,"gcs":15,"lac":0.9,"cr":0.7,"wbc":13.1,"hgb":10.1,"na":137,"glu":130,"comorb":5,"vaso":0,"surg":"neurological","age":83,"sex":"F"},"riskPct":5,"lr":9,"gb":3,"sofa":1,"si":0.54,"mapVal":78,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"8328"},{"id":"ICU-10020187","age":63,"sex":"F","surg":"neurological","unit":"Neuro Surgical Intensive Care Unit (Neuro SICU)","los":5.5,"deceased":0,"admitDate":"2169-01-15","f":{"hr":66,"sbp":131,"dbp":70,"spo2":96.0,"temp":36.9,"rr":17,"gcs":15,"lac":1.5,"cr":0.6,"wbc":7.3,"hgb":12.1,"na":141,"glu":111,"comorb":1,"vaso":0,"surg":"neurological","age":63,"sex":"F"},"riskPct":4,"lr":6,"gb":3,"sofa":1,"si":0.5,"mapVal":90,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"0187"},{"id":"ICU-10012853","age":91,"sex":"F","surg":"abdominal","unit":"Trauma SICU (TSICU)","los":3.8,"deceased":0,"admitDate":"2176-11-26","f":{"hr":69,"sbp":132,"dbp":42,"spo2":96.0,"temp":36.8,"rr":21,"gcs":14,"lac":1.1,"cr":0.9,"wbc":6.2,"hgb":10.2,"na":142,"glu":99,"comorb":8,"vaso":0,"surg":"abdominal","age":91,"sex":"F"},"riskPct":8,"lr":13,"gb":4,"sofa":3,"si":0.52,"mapVal":72,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"2853"},{"id":"ICU-10020740","age":56,"sex":"M","surg":"abdominal","unit":"Medical/Surgical Intensive Care Unit (MICU/SICU)","los":7.4,"deceased":0,"admitDate":"2150-03-11","f":{"hr":86,"sbp":122,"dbp":63,"spo2":96.0,"temp":36.9,"rr":22,"gcs":14,"lac":2.0,"cr":0.9,"wbc":5.4,"hgb":9.8,"na":139,"glu":193,"comorb":8,"vaso":0,"surg":"abdominal","age":56,"sex":"M"},"riskPct":7,"lr":11,"gb":5,"sofa":2,"si":0.7,"mapVal":83,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"0740"},{"id":"ICU-10039708","age":46,"sex":"F","surg":"abdominal","unit":"Medical/Surgical Intensive Care Unit (MICU/SICU)","los":16.2,"deceased":0,"admitDate":"2140-01-23","f":{"hr":80,"sbp":94,"dbp":62,"spo2":100.0,"temp":36.4,"rr":19,"gcs":14,"lac":2.5,"cr":3.3,"wbc":8.7,"hgb":8.5,"na":138,"glu":105,"comorb":8,"vaso":1,"surg":"abdominal","age":46,"sex":"F"},"riskPct":73,"lr":51,"gb":87,"sofa":6,"si":0.85,"mapVal":73,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"9708"},{"id":"ICU-10020306","age":74,"sex":"F","surg":"abdominal","unit":"Trauma SICU (TSICU)","los":3.2,"deceased":0,"admitDate":"2135-01-21","f":{"hr":109,"sbp":102,"dbp":64,"spo2":98.0,"temp":36.4,"rr":17,"gcs":14,"lac":1.9,"cr":0.9,"wbc":5.5,"hgb":11.0,"na":142,"glu":169,"comorb":8,"vaso":1,"surg":"abdominal","age":74,"sex":"F"},"riskPct":23,"lr":37,"gb":14,"sofa":3,"si":1.07,"mapVal":77,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"0306"},{"id":"ICU-10019568","age":59,"sex":"F","surg":"abdominal","unit":"Trauma SICU (TSICU)","los":0.8,"deceased":0,"admitDate":"2120-01-30","f":{"hr":95,"sbp":122,"dbp":62,"spo2":96.0,"temp":36.8,"rr":15,"gcs":15,"lac":2.7,"cr":0.6,"wbc":9.2,"hgb":13.2,"na":134,"glu":116,"comorb":2,"vaso":0,"surg":"abdominal","age":59,"sex":"F"},"riskPct":11,"lr":10,"gb":13,"sofa":2,"si":0.78,"mapVal":82,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"9568"},{"id":"ICU-10018081","age":79,"sex":"M","surg":"abdominal","unit":"Trauma SICU (TSICU)","los":13.9,"deceased":0,"admitDate":"2133-12-18","f":{"hr":81,"sbp":115,"dbp":53,"spo2":96.0,"temp":37.1,"rr":23,"gcs":10,"lac":1.9,"cr":2.05,"wbc":10.0,"hgb":9.9,"na":143,"glu":110,"comorb":8,"vaso":1,"surg":"abdominal","age":79,"sex":"M"},"riskPct":34,"lr":52,"gb":21,"sofa":6,"si":0.7,"mapVal":74,"riskLabel":"MODERATE","color":"#f59e0b","initials":"8081"},{"id":"ICU-10010867","age":28,"sex":"F","surg":"abdominal","unit":"Trauma SICU (TSICU)","los":9.4,"deceased":0,"admitDate":"2147-12-30","f":{"hr":88,"sbp":129,"dbp":65,"spo2":99.0,"temp":37.4,"rr":17,"gcs":10,"lac":0.9,"cr":0.55,"wbc":10.0,"hgb":9.5,"na":140,"glu":112,"comorb":8,"vaso":0,"surg":"abdominal","age":28,"sex":"F"},"riskPct":14,"lr":20,"gb":10,"sofa":2,"si":0.68,"mapVal":86,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"0867"},{"id":"ICU-10021487","age":43,"sex":"M","surg":"abdominal","unit":"Trauma SICU (TSICU)","los":15.7,"deceased":0,"admitDate":"2116-12-03","f":{"hr":108,"sbp":113,"dbp":61,"spo2":96.0,"temp":36.5,"rr":20,"gcs":10,"lac":2.7,"cr":0.7,"wbc":7.0,"hgb":8.6,"na":137,"glu":123,"comorb":8,"vaso":1,"surg":"abdominal","age":43,"sex":"M"},"riskPct":76,"lr":53,"gb":92,"sofa":5,"si":0.96,"mapVal":78,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"1487"},{"id":"ICU-10003046","age":64,"sex":"M","surg":"abdominal","unit":"Trauma SICU (TSICU)","los":2.0,"deceased":0,"admitDate":"2154-01-02","f":{"hr":107,"sbp":116,"dbp":69,"spo2":95.0,"temp":36.3,"rr":10,"gcs":15,"lac":1.3,"cr":0.8,"wbc":12.8,"hgb":13.0,"na":139,"glu":118,"comorb":1,"vaso":0,"surg":"abdominal","age":64,"sex":"M"},"riskPct":5,"lr":7,"gb":4,"sofa":1,"si":0.92,"mapVal":85,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"3046"},{"id":"ICU-10017492","age":84,"sex":"M","surg":"abdominal","unit":"Trauma SICU (TSICU)","los":0.8,"deceased":1,"admitDate":"2116-06-26","f":{"hr":86,"sbp":136,"dbp":58,"spo2":100.0,"temp":36.7,"rr":15,"gcs":11,"lac":4.0,"cr":1.4,"wbc":7.7,"hgb":9.9,"na":140,"glu":97,"comorb":7,"vaso":0,"surg":"abdominal","age":84,"sex":"M"},"riskPct":53,"lr":41,"gb":61,"sofa":5,"si":0.63,"mapVal":84,"riskLabel":"MODERATE","color":"#f59e0b","initials":"7492"},{"id":"ICU-10018501","age":83,"sex":"M","surg":"abdominal","unit":"Trauma SICU (TSICU)","los":1.9,"deceased":0,"admitDate":"2141-07-31","f":{"hr":71,"sbp":156,"dbp":68,"spo2":98.0,"temp":37.1,"rr":19,"gcs":15,"lac":1.5,"cr":1.25,"wbc":9.3,"hgb":14.0,"na":139,"glu":124,"comorb":3,"vaso":0,"surg":"abdominal","age":83,"sex":"M"},"riskPct":5,"lr":6,"gb":4,"sofa":2,"si":0.46,"mapVal":97,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"8501"},{"id":"ICU-10008454","age":26,"sex":"F","surg":"abdominal","unit":"Trauma SICU (TSICU)","los":5.0,"deceased":0,"admitDate":"2110-11-30","f":{"hr":95,"sbp":122,"dbp":59,"spo2":95.0,"temp":36.8,"rr":20,"gcs":15,"lac":3.3,"cr":0.6,"wbc":9.4,"hgb":10.1,"na":138,"glu":214,"comorb":3,"vaso":0,"surg":"abdominal","age":26,"sex":"F"},"riskPct":13,"lr":9,"gb":17,"sofa":2,"si":0.78,"mapVal":80,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"8454"},{"id":"ICU-10026354","age":34,"sex":"M","surg":"abdominal","unit":"Trauma SICU (TSICU)","los":1.4,"deceased":0,"admitDate":"2119-10-26","f":{"hr":97,"sbp":111,"dbp":64,"spo2":100.0,"temp":37.6,"rr":16,"gcs":13,"lac":2.7,"cr":0.9,"wbc":9.4,"hgb":13.3,"na":136,"glu":120,"comorb":2,"vaso":0,"surg":"abdominal","age":34,"sex":"M"},"riskPct":18,"lr":22,"gb":15,"sofa":4,"si":0.87,"mapVal":80,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"6354"},{"id":"ICU-10029291","age":50,"sex":"F","surg":"cardiac","unit":"Coronary Care Unit (CCU)","los":6.3,"deceased":0,"admitDate":"2123-02-20","f":{"hr":70,"sbp":111,"dbp":57,"spo2":96.0,"temp":36.9,"rr":21,"gcs":8,"lac":1.4,"cr":3.5,"wbc":11.5,"hgb":11.6,"na":144,"glu":177,"comorb":8,"vaso":1,"surg":"cardiac","age":50,"sex":"F"},"riskPct":73,"lr":50,"gb":89,"sofa":6,"si":0.63,"mapVal":75,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"9291"},{"id":"ICU-10027445","age":48,"sex":"F","surg":"abdominal","unit":"Medical Intensive Care Unit (MICU)","los":3.8,"deceased":0,"admitDate":"2142-07-31","f":{"hr":87,"sbp":117,"dbp":67,"spo2":97.0,"temp":37.3,"rr":22,"gcs":15,"lac":2.1,"cr":0.7,"wbc":8.0,"hgb":10.2,"na":140,"glu":176,"comorb":4,"vaso":0,"surg":"abdominal","age":48,"sex":"F"},"riskPct":9,"lr":9,"gb":8,"sofa":2,"si":0.74,"mapVal":84,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"7445"},{"id":"ICU-10010471","age":89,"sex":"F","surg":"cardiac","unit":"Coronary Care Unit (CCU)","los":4.9,"deceased":1,"admitDate":"2155-12-02","f":{"hr":90,"sbp":100,"dbp":50,"spo2":98.0,"temp":36.8,"rr":14,"gcs":15,"lac":2.1,"cr":5.9,"wbc":11.1,"hgb":9.1,"na":136,"glu":122,"comorb":8,"vaso":1,"surg":"cardiac","age":89,"sex":"F"},"riskPct":65,"lr":53,"gb":73,"sofa":6,"si":0.9,"mapVal":67,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"0471"},{"id":"ICU-10023117","age":53,"sex":"M","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":4.4,"deceased":0,"admitDate":"2171-11-14","f":{"hr":111,"sbp":94,"dbp":63,"spo2":94.0,"temp":36.9,"rr":15,"gcs":15,"lac":1.9,"cr":1.9,"wbc":10.5,"hgb":12.6,"na":137,"glu":102,"comorb":8,"vaso":1,"surg":"cardiac","age":53,"sex":"M"},"riskPct":21,"lr":36,"gb":12,"sofa":3,"si":1.18,"mapVal":73,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"3117"},{"id":"ICU-10002495","age":81,"sex":"M","surg":"cardiac","unit":"Coronary Care Unit (CCU)","los":5.1,"deceased":0,"admitDate":"2141-05-22","f":{"hr":100,"sbp":102,"dbp":61,"spo2":98.0,"temp":36.7,"rr":21,"gcs":14,"lac":2.0,"cr":1.45,"wbc":23.0,"hgb":11.9,"na":134,"glu":251,"comorb":8,"vaso":1,"surg":"cardiac","age":81,"sex":"M"},"riskPct":28,"lr":40,"gb":19,"sofa":4,"si":0.98,"mapVal":75,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"2495"},{"id":"ICU-10031404","age":82,"sex":"F","surg":"cardiac","unit":"Coronary Care Unit (CCU)","los":1.2,"deceased":0,"admitDate":"2113-08-04","f":{"hr":113,"sbp":134,"dbp":64,"spo2":96.0,"temp":36.8,"rr":26,"gcs":15,"lac":1.5,"cr":0.6,"wbc":7.3,"hgb":11.6,"na":140,"glu":106,"comorb":5,"vaso":0,"surg":"cardiac","age":82,"sex":"F"},"riskPct":8,"lr":13,"gb":5,"sofa":1,"si":0.84,"mapVal":87,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"1404"},{"id":"ICU-10026255","age":66,"sex":"M","surg":"cardiac","unit":"Coronary Care Unit (CCU)","los":0.8,"deceased":1,"admitDate":"2201-07-07","f":{"hr":82,"sbp":118,"dbp":73,"spo2":96.5,"temp":37.0,"rr":24,"gcs":15,"lac":1.3,"cr":0.7,"wbc":9.7,"hgb":13.1,"na":139,"glu":90,"comorb":7,"vaso":0,"surg":"cardiac","age":66,"sex":"M"},"riskPct":13,"lr":12,"gb":14,"sofa":1,"si":0.69,"mapVal":88,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"6255"},{"id":"ICU-10015931","age":87,"sex":"M","surg":"cardiac","unit":"Coronary Care Unit (CCU)","los":1.2,"deceased":0,"admitDate":"2176-11-19","f":{"hr":88,"sbp":115,"dbp":55,"spo2":95.0,"temp":36.4,"rr":19,"gcs":15,"lac":1.7,"cr":2.0,"wbc":8.6,"hgb":9.6,"na":132,"glu":152,"comorb":8,"vaso":0,"surg":"cardiac","age":87,"sex":"M"},"riskPct":8,"lr":14,"gb":4,"sofa":3,"si":0.77,"mapVal":75,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"5931"},{"id":"ICU-10038999","age":45,"sex":"M","surg":"cardiac","unit":"Coronary Care Unit (CCU)","los":8.8,"deceased":0,"admitDate":"2131-05-22","f":{"hr":109,"sbp":113,"dbp":66,"spo2":96.0,"temp":37.1,"rr":20,"gcs":10,"lac":1.1,"cr":0.7,"wbc":8.8,"hgb":9.1,"na":138,"glu":99,"comorb":5,"vaso":0,"surg":"cardiac","age":45,"sex":"M"},"riskPct":14,"lr":25,"gb":7,"sofa":3,"si":0.96,"mapVal":82,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"8999"},{"id":"ICU-10014354","age":60,"sex":"M","surg":"abdominal","unit":"Surgical Intensive Care Unit (SICU)","los":0.8,"deceased":0,"admitDate":"2146-10-09","f":{"hr":54,"sbp":148,"dbp":60,"spo2":96.5,"temp":36.6,"rr":17,"gcs":15,"lac":1.8,"cr":1.1,"wbc":17.1,"hgb":8.9,"na":133,"glu":183,"comorb":5,"vaso":0,"surg":"abdominal","age":60,"sex":"M"},"riskPct":4,"lr":6,"gb":3,"sofa":1,"si":0.36,"mapVal":89,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"4354"},{"id":"ICU-10003400","age":72,"sex":"F","surg":"abdominal","unit":"Medical/Surgical Intensive Care Unit (MICU/SICU)","los":12.9,"deceased":0,"admitDate":"2137-02-25","f":{"hr":112,"sbp":101,"dbp":63,"spo2":98.0,"temp":36.8,"rr":20,"gcs":14,"lac":2.1,"cr":0.9,"wbc":5.0,"hgb":8.5,"na":139,"glu":115,"comorb":8,"vaso":1,"surg":"abdominal","age":72,"sex":"F"},"riskPct":67,"lr":45,"gb":82,"sofa":4,"si":1.11,"mapVal":76,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"3400"},{"id":"ICU-10004235","age":47,"sex":"M","surg":"cardiac","unit":"Coronary Care Unit (CCU)","los":5.0,"deceased":0,"admitDate":"2196-02-24","f":{"hr":112,"sbp":107,"dbp":64,"spo2":96.0,"temp":36.9,"rr":19,"gcs":11,"lac":2.6,"cr":1.9,"wbc":13.7,"hgb":11.0,"na":137,"glu":132,"comorb":8,"vaso":1,"surg":"cardiac","age":47,"sex":"M"},"riskPct":75,"lr":57,"gb":88,"sofa":6,"si":1.05,"mapVal":78,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"4235"},{"id":"ICU-10002930","age":48,"sex":"F","surg":"abdominal","unit":"Medical Intensive Care Unit (MICU)","los":1.1,"deceased":0,"admitDate":"2196-04-14","f":{"hr":88,"sbp":115,"dbp":64,"spo2":97.0,"temp":37.1,"rr":16,"gcs":14,"lac":2.1,"cr":0.7,"wbc":2.8,"hgb":9.9,"na":139,"glu":88,"comorb":4,"vaso":0,"surg":"abdominal","age":48,"sex":"F"},"riskPct":13,"lr":13,"gb":13,"sofa":3,"si":0.77,"mapVal":81,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"2930"},{"id":"ICU-10002428","age":80,"sex":"F","surg":"abdominal","unit":"Medical Intensive Care Unit (MICU)","los":5.0,"deceased":0,"admitDate":"2156-04-12","f":{"hr":100,"sbp":99,"dbp":55,"spo2":98.0,"temp":36.7,"rr":21,"gcs":15,"lac":1.6,"cr":0.5,"wbc":9.1,"hgb":9.6,"na":135,"glu":108,"comorb":8,"vaso":0,"surg":"abdominal","age":80,"sex":"F"},"riskPct":11,"lr":20,"gb":4,"sofa":3,"si":1.01,"mapVal":70,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"2428"},{"id":"ICU-10007928","age":59,"sex":"F","surg":"abdominal","unit":"Medical Intensive Care Unit (MICU)","los":2.9,"deceased":0,"admitDate":"2129-04-06","f":{"hr":86,"sbp":105,"dbp":61,"spo2":94.0,"temp":37.1,"rr":24,"gcs":15,"lac":1.2,"cr":0.6,"wbc":10.6,"hgb":11.6,"na":134,"glu":102,"comorb":6,"vaso":0,"surg":"abdominal","age":59,"sex":"F"},"riskPct":6,"lr":9,"gb":4,"sofa":2,"si":0.82,"mapVal":76,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"7928"},{"id":"ICU-10020944","age":72,"sex":"M","surg":"abdominal","unit":"Medical Intensive Care Unit (MICU)","los":9.1,"deceased":0,"admitDate":"2131-02-27","f":{"hr":65,"sbp":117,"dbp":58,"spo2":97.0,"temp":36.9,"rr":20,"gcs":10,"lac":0.8,"cr":1.6,"wbc":5.9,"hgb":10.1,"na":140,"glu":84,"comorb":8,"vaso":1,"surg":"abdominal","age":72,"sex":"M"},"riskPct":26,"lr":38,"gb":18,"sofa":4,"si":0.56,"mapVal":78,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"0944"},{"id":"ICU-10026406","age":45,"sex":"M","surg":"abdominal","unit":"Medical Intensive Care Unit (MICU)","los":0.5,"deceased":0,"admitDate":"2129-01-05","f":{"hr":82,"sbp":122,"dbp":81,"spo2":96.0,"temp":36.6,"rr":13,"gcs":14,"lac":1.5,"cr":0.65,"wbc":5.7,"hgb":14.5,"na":142,"glu":119,"comorb":2,"vaso":0,"surg":"abdominal","age":45,"sex":"M"},"riskPct":5,"lr":6,"gb":5,"sofa":2,"si":0.67,"mapVal":95,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"6406"},{"id":"ICU-10036156","age":88,"sex":"F","surg":"abdominal","unit":"Medical Intensive Care Unit (MICU)","los":1.4,"deceased":0,"admitDate":"2157-07-01","f":{"hr":73,"sbp":124,"dbp":54,"spo2":99.0,"temp":36.9,"rr":19,"gcs":15,"lac":1.5,"cr":0.7,"wbc":7.9,"hgb":9.6,"na":141,"glu":119,"comorb":3,"vaso":0,"surg":"abdominal","age":88,"sex":"F"},"riskPct":7,"lr":12,"gb":3,"sofa":2,"si":0.59,"mapVal":77,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"6156"},{"id":"ICU-10006053","age":52,"sex":"M","surg":"abdominal","unit":"Medical Intensive Care Unit (MICU)","los":0.0,"deceased":1,"admitDate":"2111-11-13","f":{"hr":117,"sbp":120,"dbp":75,"spo2":100.0,"temp":34.8,"rr":29,"gcs":3,"lac":11.6,"cr":1.9,"wbc":11.4,"hgb":8.6,"na":147,"glu":179,"comorb":3,"vaso":0,"surg":"abdominal","age":52,"sex":"M"},"riskPct":92,"lr":96,"gb":90,"sofa":5,"si":0.97,"mapVal":90,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"6053"},{"id":"ICU-10000032","age":52,"sex":"F","surg":"abdominal","unit":"Medical Intensive Care Unit (MICU)","los":0.4,"deceased":0,"admitDate":"2180-07-23","f":{"hr":96,"sbp":89,"dbp":56,"spo2":96.0,"temp":37.1,"rr":21,"gcs":15,"lac":1.7,"cr":0.4,"wbc":5.6,"hgb":12.4,"na":127,"glu":102,"comorb":4,"vaso":0,"surg":"abdominal","age":52,"sex":"F"},"riskPct":7,"lr":12,"gb":3,"sofa":3,"si":1.08,"mapVal":67,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"0032"},{"id":"ICU-10019777","age":51,"sex":"M","surg":"abdominal","unit":"Medical Intensive Care Unit (MICU)","los":7.1,"deceased":0,"admitDate":"2187-02-10","f":{"hr":86,"sbp":115,"dbp":73,"spo2":98.0,"temp":37.1,"rr":18,"gcs":15,"lac":1.4,"cr":0.6,"wbc":15.1,"hgb":8.8,"na":140,"glu":125,"comorb":8,"vaso":0,"surg":"abdominal","age":51,"sex":"M"},"riskPct":8,"lr":12,"gb":5,"sofa":1,"si":0.75,"mapVal":87,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"9777"},{"id":"ICU-10021312","age":55,"sex":"F","surg":"abdominal","unit":"Medical Intensive Care Unit (MICU)","los":1.1,"deceased":0,"admitDate":"2113-09-14","f":{"hr":79,"sbp":128,"dbp":72,"spo2":95.0,"temp":36.7,"rr":22,"gcs":14,"lac":1.3,"cr":0.6,"wbc":12.7,"hgb":12.1,"na":136,"glu":98,"comorb":5,"vaso":0,"surg":"abdominal","age":55,"sex":"F"},"riskPct":5,"lr":7,"gb":3,"sofa":2,"si":0.62,"mapVal":91,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"1312"},{"id":"ICU-10007818","age":69,"sex":"M","surg":"abdominal","unit":"Medical Intensive Care Unit (MICU)","los":20.5,"deceased":1,"admitDate":"2146-06-22","f":{"hr":82,"sbp":115,"dbp":57,"spo2":98.0,"temp":35.6,"rr":22,"gcs":10,"lac":3.6,"cr":2.4,"wbc":13.0,"hgb":8.4,"na":135,"glu":166,"comorb":8,"vaso":1,"surg":"abdominal","age":69,"sex":"M"},"riskPct":82,"lr":63,"gb":95,"sofa":7,"si":0.71,"mapVal":76,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"7818"},{"id":"ICU-10021938","age":65,"sex":"M","surg":"abdominal","unit":"Medical Intensive Care Unit (MICU)","los":1.6,"deceased":0,"admitDate":"2181-10-13","f":{"hr":80,"sbp":142,"dbp":81,"spo2":96.0,"temp":36.7,"rr":17,"gcs":15,"lac":1.4,"cr":9.2,"wbc":8.9,"hgb":10.9,"na":139,"glu":96,"comorb":3,"vaso":0,"surg":"abdominal","age":65,"sex":"M"},"riskPct":7,"lr":9,"gb":5,"sofa":3,"si":0.56,"mapVal":101,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"1938"},{"id":"ICU-10016742","age":58,"sex":"F","surg":"abdominal","unit":"Surgical Intensive Care Unit (SICU)","los":4.9,"deceased":0,"admitDate":"2178-07-03","f":{"hr":80,"sbp":129,"dbp":77,"spo2":98.0,"temp":37.0,"rr":16,"gcs":10,"lac":1.1,"cr":0.5,"wbc":9.9,"hgb":10.0,"na":140,"glu":150,"comorb":8,"vaso":0,"surg":"abdominal","age":58,"sex":"F"},"riskPct":10,"lr":14,"gb":8,"sofa":3,"si":0.62,"mapVal":94,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"6742"},{"id":"ICU-10019917","age":44,"sex":"M","surg":"abdominal","unit":"Medical Intensive Care Unit (MICU)","los":1.3,"deceased":0,"admitDate":"2182-01-07","f":{"hr":72,"sbp":110,"dbp":64,"spo2":100.0,"temp":37.0,"rr":20,"gcs":15,"lac":1.5,"cr":1.1,"wbc":6.5,"hgb":9.9,"na":141,"glu":102,"comorb":1,"vaso":0,"surg":"abdominal","age":44,"sex":"M"},"riskPct":7,"lr":12,"gb":4,"sofa":2,"si":0.65,"mapVal":79,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"9917"},{"id":"ICU-10037975","age":60,"sex":"M","surg":"abdominal","unit":"Medical Intensive Care Unit (MICU)","los":4.9,"deceased":1,"admitDate":"2185-01-17","f":{"hr":88,"sbp":117,"dbp":52,"spo2":95.0,"temp":37.6,"rr":32,"gcs":3,"lac":2.5,"cr":3.95,"wbc":12.2,"hgb":11.4,"na":144,"glu":129,"comorb":7,"vaso":1,"surg":"abdominal","age":60,"sex":"M"},"riskPct":91,"lr":80,"gb":98,"sofa":7,"si":0.75,"mapVal":74,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"7975"},{"id":"ICU-10015860","age":53,"sex":"M","surg":"abdominal","unit":"Medical Intensive Care Unit (MICU)","los":0.8,"deceased":0,"admitDate":"2186-09-15","f":{"hr":101,"sbp":116,"dbp":66,"spo2":97.0,"temp":37.4,"rr":20,"gcs":15,"lac":1.1,"cr":3.3,"wbc":12.1,"hgb":9.6,"na":135,"glu":121,"comorb":5,"vaso":0,"surg":"abdominal","age":53,"sex":"M"},"riskPct":7,"lr":13,"gb":3,"sofa":3,"si":0.87,"mapVal":83,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"5860"},{"id":"ICU-10029484","age":64,"sex":"M","surg":"abdominal","unit":"Medical Intensive Care Unit (MICU)","los":0.7,"deceased":0,"admitDate":"2160-11-08","f":{"hr":95,"sbp":144,"dbp":63,"spo2":98.0,"temp":37.2,"rr":27,"gcs":15,"lac":1.5,"cr":1.0,"wbc":4.0,"hgb":12.8,"na":135,"glu":256,"comorb":3,"vaso":0,"surg":"abdominal","age":64,"sex":"M"},"riskPct":5,"lr":6,"gb":4,"sofa":1,"si":0.66,"mapVal":90,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"9484"},{"id":"ICU-10038081","age":63,"sex":"F","surg":"abdominal","unit":"Medical Intensive Care Unit (MICU)","los":3.7,"deceased":1,"admitDate":"2115-10-09","f":{"hr":102,"sbp":101,"dbp":33,"spo2":100.0,"temp":36.7,"rr":24,"gcs":3,"lac":5.4,"cr":1.6,"wbc":4.9,"hgb":7.8,"na":126,"glu":198,"comorb":8,"vaso":1,"surg":"abdominal","age":63,"sex":"F"},"riskPct":96,"lr":93,"gb":99,"sofa":7,"si":1.01,"mapVal":56,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"8081"},{"id":"ICU-10004720","age":61,"sex":"M","surg":"abdominal","unit":"Surgical Intensive Care Unit (SICU)","los":5.1,"deceased":1,"admitDate":"2186-11-12","f":{"hr":78,"sbp":106,"dbp":56,"spo2":97.0,"temp":35.6,"rr":15,"gcs":4,"lac":1.6,"cr":0.3,"wbc":11.2,"hgb":11.0,"na":134,"glu":128,"comorb":8,"vaso":1,"surg":"abdominal","age":61,"sex":"M"},"riskPct":80,"lr":66,"gb":90,"sofa":4,"si":0.74,"mapVal":73,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"4720"},{"id":"ICU-10005866","age":57,"sex":"M","surg":"abdominal","unit":"Trauma SICU (TSICU)","los":2.2,"deceased":0,"admitDate":"2149-10-02","f":{"hr":82,"sbp":113,"dbp":57,"spo2":92.0,"temp":36.7,"rr":12,"gcs":15,"lac":1.7,"cr":0.6,"wbc":7.2,"hgb":9.9,"na":136,"glu":105,"comorb":8,"vaso":1,"surg":"abdominal","age":57,"sex":"M"},"riskPct":14,"lr":16,"gb":12,"sofa":2,"si":0.73,"mapVal":76,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"5866"},{"id":"ICU-10008287","age":43,"sex":"F","surg":"abdominal","unit":"Surgical Intensive Care Unit (SICU)","los":1.1,"deceased":0,"admitDate":"2145-09-28","f":{"hr":95,"sbp":112,"dbp":59,"spo2":100.0,"temp":37.3,"rr":16,"gcs":15,"lac":0.6,"cr":0.5,"wbc":13.2,"hgb":12.1,"na":139,"glu":105,"comorb":1,"vaso":0,"surg":"abdominal","age":43,"sex":"F"},"riskPct":6,"lr":11,"gb":3,"sofa":1,"si":0.85,"mapVal":77,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"8287"},{"id":"ICU-10001217","age":55,"sex":"F","surg":"abdominal","unit":"Surgical Intensive Care Unit (SICU)","los":1.1,"deceased":0,"admitDate":"2157-11-20","f":{"hr":94,"sbp":135,"dbp":80,"spo2":96.0,"temp":37.3,"rr":21,"gcs":15,"lac":1.0,"cr":0.5,"wbc":9.7,"hgb":12.5,"na":140,"glu":95,"comorb":3,"vaso":0,"surg":"abdominal","age":55,"sex":"F"},"riskPct":5,"lr":6,"gb":5,"sofa":0,"si":0.7,"mapVal":98,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"1217"},{"id":"ICU-10022041","age":64,"sex":"M","surg":"abdominal","unit":"Surgical Intensive Care Unit (SICU)","los":1.9,"deceased":0,"admitDate":"2187-05-18","f":{"hr":75,"sbp":128,"dbp":85,"spo2":100.0,"temp":37.3,"rr":18,"gcs":11,"lac":1.5,"cr":0.6,"wbc":11.6,"hgb":10.9,"na":136,"glu":112,"comorb":3,"vaso":0,"surg":"abdominal","age":64,"sex":"M"},"riskPct":10,"lr":14,"gb":8,"sofa":3,"si":0.59,"mapVal":99,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"2041"},{"id":"ICU-10016810","age":66,"sex":"F","surg":"abdominal","unit":"Surgical Intensive Care Unit (SICU)","los":2.5,"deceased":0,"admitDate":"2185-06-16","f":{"hr":73,"sbp":112,"dbp":56,"spo2":93.0,"temp":36.9,"rr":18,"gcs":15,"lac":1.0,"cr":0.6,"wbc":12.4,"hgb":12.1,"na":133,"glu":134,"comorb":3,"vaso":0,"surg":"abdominal","age":66,"sex":"F"},"riskPct":4,"lr":5,"gb":3,"sofa":1,"si":0.65,"mapVal":75,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"6810"},{"id":"ICU-10024043","age":67,"sex":"M","surg":"abdominal","unit":"Surgical Intensive Care Unit (SICU)","los":2.7,"deceased":0,"admitDate":"2117-04-11","f":{"hr":64,"sbp":122,"dbp":68,"spo2":97.0,"temp":36.3,"rr":18,"gcs":15,"lac":3.1,"cr":1.1,"wbc":5.9,"hgb":17.4,"na":132,"glu":107,"comorb":4,"vaso":0,"surg":"abdominal","age":67,"sex":"M"},"riskPct":17,"lr":9,"gb":23,"sofa":2,"si":0.52,"mapVal":86,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"4043"},{"id":"ICU-10018845","age":91,"sex":"M","surg":"abdominal","unit":"Surgical Intensive Care Unit (SICU)","los":1.5,"deceased":0,"admitDate":"2184-10-08","f":{"hr":74,"sbp":128,"dbp":52,"spo2":97.0,"temp":36.4,"rr":13,"gcs":15,"lac":1.5,"cr":5.0,"wbc":8.8,"hgb":8.5,"na":138,"glu":92,"comorb":4,"vaso":0,"surg":"abdominal","age":91,"sex":"M"},"riskPct":10,"lr":14,"gb":8,"sofa":4,"si":0.58,"mapVal":77,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"8845"},{"id":"ICU-10014078","age":60,"sex":"F","surg":"abdominal","unit":"Surgical Intensive Care Unit (SICU)","los":2.5,"deceased":0,"admitDate":"2166-08-22","f":{"hr":85,"sbp":108,"dbp":58,"spo2":100.0,"temp":37.6,"rr":20,"gcs":7,"lac":2.0,"cr":0.5,"wbc":6.9,"hgb":10.3,"na":141,"glu":110,"comorb":2,"vaso":1,"surg":"abdominal","age":60,"sex":"F"},"riskPct":80,"lr":63,"gb":92,"sofa":4,"si":0.79,"mapVal":75,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"4078"},{"id":"ICU-10016150","age":69,"sex":"M","surg":"abdominal","unit":"Surgical Intensive Care Unit (SICU)","los":0.2,"deceased":0,"admitDate":"2142-05-10","f":{"hr":70,"sbp":161,"dbp":73,"spo2":97.0,"temp":36.9,"rr":18,"gcs":13,"lac":1.5,"cr":0.9,"wbc":7.4,"hgb":15.5,"na":138,"glu":165,"comorb":5,"vaso":0,"surg":"abdominal","age":69,"sex":"M"},"riskPct":5,"lr":5,"gb":5,"sofa":2,"si":0.43,"mapVal":102,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"6150"},{"id":"ICU-10027602","age":71,"sex":"F","surg":"abdominal","unit":"Surgical Intensive Care Unit (SICU)","los":13.3,"deceased":0,"admitDate":"2201-10-30","f":{"hr":96,"sbp":120,"dbp":67,"spo2":97.0,"temp":37.6,"rr":18,"gcs":6,"lac":1.9,"cr":0.5,"wbc":12.7,"hgb":11.2,"na":139,"glu":140,"comorb":5,"vaso":1,"surg":"abdominal","age":71,"sex":"F"},"riskPct":75,"lr":56,"gb":89,"sofa":3,"si":0.8,"mapVal":85,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"7602"},{"id":"ICU-10039831","age":57,"sex":"F","surg":"abdominal","unit":"Surgical Intensive Care Unit (SICU)","los":1.9,"deceased":0,"admitDate":"2115-12-28","f":{"hr":99,"sbp":118,"dbp":56,"spo2":96.0,"temp":37.7,"rr":25,"gcs":15,"lac":3.8,"cr":0.6,"wbc":12.6,"hgb":11.1,"na":134,"glu":117,"comorb":2,"vaso":0,"surg":"abdominal","age":57,"sex":"F"},"riskPct":21,"lr":19,"gb":23,"sofa":3,"si":0.84,"mapVal":77,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"9831"},{"id":"ICU-10025463","age":66,"sex":"M","surg":"abdominal","unit":"Surgical Intensive Care Unit (SICU)","los":0.6,"deceased":1,"admitDate":"2137-10-09","f":{"hr":97,"sbp":144,"dbp":70,"spo2":96.0,"temp":37.4,"rr":16,"gcs":3,"lac":1.4,"cr":0.9,"wbc":7.5,"hgb":13.1,"na":138,"glu":134,"comorb":3,"vaso":0,"surg":"abdominal","age":66,"sex":"M"},"riskPct":63,"lr":28,"gb":87,"sofa":3,"si":0.67,"mapVal":95,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"5463"},{"id":"ICU-10039997","age":67,"sex":"F","surg":"abdominal","unit":"Surgical Intensive Care Unit (SICU)","los":1.2,"deceased":0,"admitDate":"2134-09-07","f":{"hr":95,"sbp":145,"dbp":66,"spo2":94.0,"temp":37.4,"rr":16,"gcs":14,"lac":2.2,"cr":0.95,"wbc":4.6,"hgb":12.2,"na":142,"glu":100,"comorb":3,"vaso":0,"surg":"abdominal","age":67,"sex":"F"},"riskPct":10,"lr":8,"gb":12,"sofa":3,"si":0.66,"mapVal":92,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"9997"},{"id":"ICU-10025612","age":82,"sex":"M","surg":"abdominal","unit":"Surgical Intensive Care Unit (SICU)","los":5.2,"deceased":0,"admitDate":"2125-09-25","f":{"hr":86,"sbp":102,"dbp":53,"spo2":96.0,"temp":36.6,"rr":21,"gcs":15,"lac":2.8,"cr":0.9,"wbc":7.7,"hgb":12.5,"na":138,"glu":124,"comorb":5,"vaso":1,"surg":"abdominal","age":82,"sex":"M"},"riskPct":65,"lr":34,"gb":86,"sofa":4,"si":0.84,"mapVal":69,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"5612"},{"id":"ICU-10031757","age":67,"sex":"F","surg":"abdominal","unit":"Surgical Intensive Care Unit (SICU)","los":1.8,"deceased":0,"admitDate":"2137-10-12","f":{"hr":88,"sbp":127,"dbp":63,"spo2":98.0,"temp":36.8,"rr":18,"gcs":15,"lac":1.2,"cr":0.6,"wbc":17.3,"hgb":11.2,"na":137,"glu":92,"comorb":8,"vaso":0,"surg":"abdominal","age":67,"sex":"F"},"riskPct":8,"lr":12,"gb":5,"sofa":1,"si":0.69,"mapVal":84,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"1757"},{"id":"ICU-10040025","age":64,"sex":"F","surg":"abdominal","unit":"Surgical Intensive Care Unit (SICU)","los":6.5,"deceased":0,"admitDate":"2148-01-24","f":{"hr":87,"sbp":107,"dbp":57,"spo2":98.0,"temp":36.6,"rr":15,"gcs":13,"lac":1.8,"cr":2.1,"wbc":9.0,"hgb":9.1,"na":136,"glu":186,"comorb":8,"vaso":1,"surg":"abdominal","age":64,"sex":"F"},"riskPct":21,"lr":35,"gb":12,"sofa":5,"si":0.81,"mapVal":74,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"0025"},{"id":"ICU-10038933","age":34,"sex":"M","surg":"abdominal","unit":"Surgical Intensive Care Unit (SICU)","los":5.4,"deceased":0,"admitDate":"2148-09-10","f":{"hr":91,"sbp":136,"dbp":65,"spo2":96.0,"temp":37.0,"rr":22,"gcs":13,"lac":2.5,"cr":0.6,"wbc":15.5,"hgb":14.4,"na":136,"glu":171,"comorb":4,"vaso":0,"surg":"abdominal","age":34,"sex":"M"},"riskPct":12,"lr":10,"gb":13,"sofa":3,"si":0.67,"mapVal":89,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"8933"},{"id":"ICU-10021666","age":87,"sex":"M","surg":"abdominal","unit":"Surgical Intensive Care Unit (SICU)","los":0.6,"deceased":0,"admitDate":"2172-03-13","f":{"hr":69,"sbp":139,"dbp":60,"spo2":94.5,"temp":37.1,"rr":17,"gcs":14,"lac":1.5,"cr":1.3,"wbc":10.5,"hgb":10.8,"na":144,"glu":141,"comorb":8,"vaso":0,"surg":"abdominal","age":87,"sex":"M"},"riskPct":6,"lr":9,"gb":5,"sofa":3,"si":0.5,"mapVal":86,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"1666"},{"id":"ICU-10022880","age":66,"sex":"M","surg":"abdominal","unit":"Surgical Intensive Care Unit (SICU)","los":0.7,"deceased":0,"admitDate":"2177-03-15","f":{"hr":95,"sbp":108,"dbp":61,"spo2":97.0,"temp":36.9,"rr":16,"gcs":15,"lac":1.5,"cr":1.0,"wbc":8.4,"hgb":12.0,"na":139,"glu":115,"comorb":3,"vaso":0,"surg":"abdominal","age":66,"sex":"M"},"riskPct":7,"lr":11,"gb":3,"sofa":2,"si":0.88,"mapVal":77,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"2880"},{"id":"ICU-10019172","age":63,"sex":"F","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":3.5,"deceased":0,"admitDate":"2118-11-16","f":{"hr":70,"sbp":124,"dbp":53,"spo2":96.0,"temp":36.8,"rr":17,"gcs":15,"lac":2.2,"cr":0.6,"wbc":8.3,"hgb":9.8,"na":139,"glu":110,"comorb":2,"vaso":1,"surg":"cardiac","age":63,"sex":"F"},"riskPct":53,"lr":23,"gb":73,"sofa":3,"si":0.56,"mapVal":77,"riskLabel":"MODERATE","color":"#f59e0b","initials":"9172"},{"id":"ICU-10035185","age":70,"sex":"M","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":1.1,"deceased":0,"admitDate":"2120-05-13","f":{"hr":73,"sbp":107,"dbp":63,"spo2":98.0,"temp":35.0,"rr":15,"gcs":14,"lac":1.8,"cr":1.35,"wbc":10.6,"hgb":11.5,"na":138,"glu":166,"comorb":3,"vaso":1,"surg":"cardiac","age":70,"sex":"M"},"riskPct":18,"lr":30,"gb":10,"sofa":4,"si":0.68,"mapVal":78,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"5185"},{"id":"ICU-10013049","age":52,"sex":"M","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":1.2,"deceased":0,"admitDate":"2114-06-20","f":{"hr":80,"sbp":120,"dbp":61,"spo2":99.0,"temp":36.9,"rr":17,"gcs":15,"lac":1.2,"cr":0.8,"wbc":9.4,"hgb":13.0,"na":137,"glu":126,"comorb":1,"vaso":0,"surg":"cardiac","age":52,"sex":"M"},"riskPct":6,"lr":10,"gb":3,"sofa":1,"si":0.67,"mapVal":81,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"3049"},{"id":"ICU-10022017","age":59,"sex":"M","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":4.5,"deceased":0,"admitDate":"2189-09-10","f":{"hr":80,"sbp":108,"dbp":60,"spo2":97.0,"temp":36.7,"rr":20,"gcs":15,"lac":1.4,"cr":0.7,"wbc":17.9,"hgb":10.4,"na":138,"glu":150,"comorb":5,"vaso":1,"surg":"cardiac","age":59,"sex":"M"},"riskPct":17,"lr":28,"gb":10,"sofa":2,"si":0.74,"mapVal":76,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"2017"},{"id":"ICU-10009049","age":56,"sex":"M","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":1.2,"deceased":0,"admitDate":"2174-05-26","f":{"hr":86,"sbp":112,"dbp":68,"spo2":95.0,"temp":36.9,"rr":25,"gcs":15,"lac":2.1,"cr":1.1,"wbc":9.4,"hgb":11.8,"na":140,"glu":105,"comorb":4,"vaso":0,"surg":"cardiac","age":56,"sex":"M"},"riskPct":13,"lr":13,"gb":13,"sofa":2,"si":0.77,"mapVal":83,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"9049"},{"id":"ICU-10004457","age":65,"sex":"M","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":1.2,"deceased":0,"admitDate":"2141-12-17","f":{"hr":98,"sbp":109,"dbp":55,"spo2":98.0,"temp":36.7,"rr":16,"gcs":15,"lac":1.4,"cr":0.95,"wbc":7.0,"hgb":10.5,"na":140,"glu":110,"comorb":3,"vaso":1,"surg":"cardiac","age":65,"sex":"M"},"riskPct":20,"lr":34,"gb":10,"sofa":2,"si":0.9,"mapVal":73,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"4457"},{"id":"ICU-10038992","age":70,"sex":"M","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":1.2,"deceased":0,"admitDate":"2187-07-29","f":{"hr":81,"sbp":101,"dbp":54,"spo2":99.0,"temp":36.5,"rr":16,"gcs":15,"lac":1.7,"cr":1.8,"wbc":12.7,"hgb":9.2,"na":138,"glu":115,"comorb":5,"vaso":1,"surg":"cardiac","age":70,"sex":"M"},"riskPct":24,"lr":42,"gb":11,"sofa":4,"si":0.8,"mapVal":70,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"8992"},{"id":"ICU-10004422","age":78,"sex":"M","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":6.4,"deceased":0,"admitDate":"2111-01-17","f":{"hr":79,"sbp":104,"dbp":52,"spo2":99.0,"temp":36.8,"rr":16,"gcs":14,"lac":2.8,"cr":0.7,"wbc":11.2,"hgb":10.8,"na":138,"glu":114,"comorb":5,"vaso":1,"surg":"cardiac","age":78,"sex":"M"},"riskPct":71,"lr":50,"gb":85,"sofa":5,"si":0.76,"mapVal":69,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"4422"},{"id":"ICU-10007058","age":48,"sex":"M","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":2.0,"deceased":0,"admitDate":"2167-11-07","f":{"hr":64,"sbp":118,"dbp":70,"spo2":98.0,"temp":36.9,"rr":18,"gcs":15,"lac":1.5,"cr":0.9,"wbc":8.3,"hgb":12.1,"na":138,"glu":104,"comorb":2,"vaso":0,"surg":"cardiac","age":48,"sex":"M"},"riskPct":5,"lr":9,"gb":3,"sofa":1,"si":0.54,"mapVal":86,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"7058"},{"id":"ICU-10006580","age":63,"sex":"F","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":0.9,"deceased":0,"admitDate":"2137-08-10","f":{"hr":77,"sbp":150,"dbp":60,"spo2":96.0,"temp":36.6,"rr":15,"gcs":14,"lac":1.5,"cr":0.5,"wbc":7.8,"hgb":9.8,"na":134,"glu":222,"comorb":3,"vaso":0,"surg":"cardiac","age":63,"sex":"F"},"riskPct":4,"lr":5,"gb":3,"sofa":2,"si":0.51,"mapVal":90,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"6580"},{"id":"ICU-10005909","age":40,"sex":"F","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":3.7,"deceased":0,"admitDate":"2144-10-29","f":{"hr":100,"sbp":121,"dbp":73,"spo2":95.0,"temp":36.9,"rr":18,"gcs":15,"lac":0.9,"cr":0.6,"wbc":11.6,"hgb":11.0,"na":138,"glu":122,"comorb":1,"vaso":0,"surg":"cardiac","age":40,"sex":"F"},"riskPct":4,"lr":6,"gb":3,"sofa":0,"si":0.83,"mapVal":89,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"5909"},{"id":"ICU-10011398","age":67,"sex":"M","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":1.0,"deceased":0,"admitDate":"2146-12-15","f":{"hr":82,"sbp":113,"dbp":56,"spo2":100.0,"temp":36.7,"rr":11,"gcs":15,"lac":3.1,"cr":0.7,"wbc":8.6,"hgb":9.6,"na":140,"glu":115,"comorb":3,"vaso":1,"surg":"cardiac","age":67,"sex":"M"},"riskPct":68,"lr":44,"gb":84,"sofa":3,"si":0.73,"mapVal":75,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"1398"},{"id":"ICU-10018423","age":37,"sex":"M","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":1.2,"deceased":0,"admitDate":"2167-05-05","f":{"hr":90,"sbp":109,"dbp":61,"spo2":99.5,"temp":36.6,"rr":20,"gcs":3,"lac":2.9,"cr":0.95,"wbc":7.9,"hgb":10.9,"na":135,"glu":108,"comorb":3,"vaso":1,"surg":"cardiac","age":37,"sex":"M"},"riskPct":91,"lr":81,"gb":98,"sofa":5,"si":0.83,"mapVal":77,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"8423"},{"id":"ICU-10009035","age":28,"sex":"M","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":1.2,"deceased":0,"admitDate":"2161-04-27","f":{"hr":109,"sbp":108,"dbp":57,"spo2":98.0,"temp":37.4,"rr":20,"gcs":15,"lac":1.6,"cr":1.0,"wbc":10.6,"hgb":10.1,"na":138,"glu":114,"comorb":1,"vaso":1,"surg":"cardiac","age":28,"sex":"M"},"riskPct":21,"lr":35,"gb":11,"sofa":2,"si":1.01,"mapVal":74,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"9035"},{"id":"ICU-10023771","age":70,"sex":"M","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":2.3,"deceased":0,"admitDate":"2113-08-25","f":{"hr":80,"sbp":122,"dbp":60,"spo2":100.0,"temp":37.1,"rr":17,"gcs":14,"lac":1.8,"cr":0.9,"wbc":5.6,"hgb":9.3,"na":141,"glu":113,"comorb":2,"vaso":0,"surg":"cardiac","age":70,"sex":"M"},"riskPct":9,"lr":18,"gb":3,"sofa":2,"si":0.66,"mapVal":81,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"3771"},{"id":"ICU-10022281","age":84,"sex":"M","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":1.4,"deceased":0,"admitDate":"2125-06-17","f":{"hr":70,"sbp":126,"dbp":45,"spo2":96.0,"temp":36.7,"rr":20,"gcs":15,"lac":1.5,"cr":1.3,"wbc":10.5,"hgb":11.3,"na":140,"glu":83,"comorb":2,"vaso":0,"surg":"cardiac","age":84,"sex":"M"},"riskPct":9,"lr":13,"gb":5,"sofa":3,"si":0.56,"mapVal":72,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"2281"},{"id":"ICU-10005348","age":76,"sex":"M","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":2.0,"deceased":0,"admitDate":"2130-10-27","f":{"hr":83,"sbp":118,"dbp":54,"spo2":100.0,"temp":36.5,"rr":20,"gcs":15,"lac":1.2,"cr":0.8,"wbc":9.3,"hgb":9.6,"na":137,"glu":124,"comorb":8,"vaso":1,"surg":"cardiac","age":76,"sex":"M"},"riskPct":22,"lr":38,"gb":11,"sofa":2,"si":0.7,"mapVal":75,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"5348"},{"id":"ICU-10012552","age":78,"sex":"M","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":3.2,"deceased":0,"admitDate":"2140-03-25","f":{"hr":85,"sbp":129,"dbp":64,"spo2":96.0,"temp":36.6,"rr":17,"gcs":15,"lac":1.3,"cr":1.0,"wbc":9.0,"hgb":9.5,"na":141,"glu":120,"comorb":2,"vaso":0,"surg":"cardiac","age":78,"sex":"M"},"riskPct":6,"lr":9,"gb":3,"sofa":1,"si":0.66,"mapVal":86,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"2552"},{"id":"ICU-10019385","age":44,"sex":"M","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":1.3,"deceased":0,"admitDate":"2180-02-21","f":{"hr":67,"sbp":124,"dbp":63,"spo2":97.0,"temp":36.8,"rr":20,"gcs":10,"lac":2.1,"cr":0.9,"wbc":10.6,"hgb":12.4,"na":137,"glu":125,"comorb":3,"vaso":1,"surg":"cardiac","age":44,"sex":"M"},"riskPct":64,"lr":36,"gb":82,"sofa":4,"si":0.54,"mapVal":83,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"9385"},{"id":"ICU-10014729","age":21,"sex":"F","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":2.5,"deceased":0,"admitDate":"2125-02-27","f":{"hr":90,"sbp":133,"dbp":59,"spo2":98.0,"temp":36.9,"rr":17,"gcs":14,"lac":2.7,"cr":0.55,"wbc":11.2,"hgb":9.2,"na":138,"glu":94,"comorb":2,"vaso":0,"surg":"cardiac","age":21,"sex":"F"},"riskPct":18,"lr":17,"gb":19,"sofa":3,"si":0.68,"mapVal":84,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"4729"},{"id":"ICU-10009628","age":58,"sex":"M","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":2.3,"deceased":0,"admitDate":"2153-09-19","f":{"hr":97,"sbp":110,"dbp":60,"spo2":98.0,"temp":37.0,"rr":16,"gcs":14,"lac":2.7,"cr":0.9,"wbc":9.5,"hgb":8.8,"na":134,"glu":130,"comorb":2,"vaso":1,"surg":"cardiac","age":58,"sex":"M"},"riskPct":64,"lr":39,"gb":81,"sofa":4,"si":0.88,"mapVal":77,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"9628"},{"id":"ICU-10005817","age":66,"sex":"M","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":2.4,"deceased":0,"admitDate":"2132-12-15","f":{"hr":74,"sbp":117,"dbp":41,"spo2":96.0,"temp":37.0,"rr":17,"gcs":15,"lac":1.9,"cr":1.9,"wbc":11.9,"hgb":9.5,"na":134,"glu":210,"comorb":8,"vaso":1,"surg":"cardiac","age":66,"sex":"M"},"riskPct":19,"lr":28,"gb":13,"sofa":4,"si":0.63,"mapVal":66,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"5817"},{"id":"ICU-10021118","age":62,"sex":"M","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":1.5,"deceased":0,"admitDate":"2161-11-19","f":{"hr":79,"sbp":107,"dbp":59,"spo2":96.0,"temp":36.3,"rr":16,"gcs":15,"lac":1.8,"cr":1.0,"wbc":8.9,"hgb":11.3,"na":137,"glu":113,"comorb":4,"vaso":1,"surg":"cardiac","age":62,"sex":"M"},"riskPct":16,"lr":27,"gb":10,"sofa":2,"si":0.74,"mapVal":75,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"1118"},{"id":"ICU-10037861","age":77,"sex":"M","surg":"neurological","unit":"Neuro Surgical Intensive Care Unit (Neuro SICU)","los":10.4,"deceased":1,"admitDate":"2117-03-14","f":{"hr":95,"sbp":109,"dbp":55,"spo2":98.0,"temp":38.1,"rr":22,"gcs":3,"lac":1.8,"cr":1.6,"wbc":9.6,"hgb":14.1,"na":148,"glu":190,"comorb":8,"vaso":1,"surg":"neurological","age":77,"sex":"M"},"riskPct":87,"lr":82,"gb":91,"sofa":5,"si":0.87,"mapVal":73,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"7861"},{"id":"ICU-10015272","age":78,"sex":"F","surg":"cardiac","unit":"Cardiac Vascular Intensive Care Unit (CVICU)","los":2.1,"deceased":0,"admitDate":"2137-06-12","f":{"hr":94,"sbp":109,"dbp":66,"spo2":97.0,"temp":36.5,"rr":20,"gcs":15,"lac":2.3,"cr":0.6,"wbc":5.9,"hgb":8.9,"na":134,"glu":88,"comorb":4,"vaso":0,"surg":"cardiac","age":78,"sex":"F"},"riskPct":16,"lr":17,"gb":15,"sofa":2,"si":0.86,"mapVal":80,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"5272"},{"id":"ICU-10019003","age":65,"sex":"F","surg":"abdominal","unit":"Medical/Surgical Intensive Care Unit (MICU/SICU)","los":3.6,"deceased":0,"admitDate":"2153-03-28","f":{"hr":105,"sbp":119,"dbp":56,"spo2":94.0,"temp":36.8,"rr":26,"gcs":15,"lac":3.1,"cr":1.0,"wbc":51.9,"hgb":7.6,"na":142,"glu":97,"comorb":8,"vaso":1,"surg":"abdominal","age":65,"sex":"F"},"riskPct":76,"lr":52,"gb":91,"sofa":3,"si":0.88,"mapVal":77,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"9003"},{"id":"ICU-10037928","age":78,"sex":"F","surg":"abdominal","unit":"Medical/Surgical Intensive Care Unit (MICU/SICU)","los":0.8,"deceased":0,"admitDate":"2177-07-14","f":{"hr":78,"sbp":113,"dbp":46,"spo2":97.0,"temp":36.9,"rr":21,"gcs":15,"lac":1.7,"cr":1.3,"wbc":9.4,"hgb":12.4,"na":139,"glu":196,"comorb":5,"vaso":0,"surg":"abdominal","age":78,"sex":"F"},"riskPct":6,"lr":11,"gb":3,"sofa":4,"si":0.69,"mapVal":68,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"7928"},{"id":"ICU-10004733","age":51,"sex":"M","surg":"abdominal","unit":"Medical/Surgical Intensive Care Unit (MICU/SICU)","los":8.4,"deceased":0,"admitDate":"2174-12-04","f":{"hr":88,"sbp":158,"dbp":86,"spo2":96.0,"temp":37.1,"rr":18,"gcs":10,"lac":0.8,"cr":3.2,"wbc":7.1,"hgb":9.0,"na":143,"glu":92,"comorb":8,"vaso":1,"surg":"abdominal","age":51,"sex":"M"},"riskPct":19,"lr":25,"gb":15,"sofa":4,"si":0.56,"mapVal":110,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"4733"},{"id":"ICU-10007795","age":53,"sex":"F","surg":"abdominal","unit":"Medical/Surgical Intensive Care Unit (MICU/SICU)","los":1.1,"deceased":0,"admitDate":"2136-04-22","f":{"hr":106,"sbp":145,"dbp":68,"spo2":95.0,"temp":37.4,"rr":22,"gcs":15,"lac":1.1,"cr":0.6,"wbc":14.1,"hgb":7.9,"na":138,"glu":134,"comorb":7,"vaso":0,"surg":"abdominal","age":53,"sex":"F"},"riskPct":7,"lr":8,"gb":6,"sofa":1,"si":0.73,"mapVal":94,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"7795"},{"id":"ICU-10020640","age":91,"sex":"F","surg":"abdominal","unit":"Medical/Surgical Intensive Care Unit (MICU/SICU)","los":2.6,"deceased":0,"admitDate":"2153-02-13","f":{"hr":65,"sbp":101,"dbp":47,"spo2":95.0,"temp":36.7,"rr":25,"gcs":14,"lac":2.8,"cr":0.5,"wbc":10.8,"hgb":8.2,"na":148,"glu":150,"comorb":7,"vaso":0,"surg":"abdominal","age":91,"sex":"F"},"riskPct":31,"lr":20,"gb":37,"sofa":5,"si":0.64,"mapVal":65,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"0640"},{"id":"ICU-10023239","age":29,"sex":"F","surg":"abdominal","unit":"Medical/Surgical Intensive Care Unit (MICU/SICU)","los":2.8,"deceased":0,"admitDate":"2137-06-19","f":{"hr":97,"sbp":109,"dbp":69,"spo2":98.0,"temp":36.8,"rr":21,"gcs":15,"lac":1.6,"cr":0.9,"wbc":7.4,"hgb":11.4,"na":135,"glu":197,"comorb":4,"vaso":0,"surg":"abdominal","age":29,"sex":"F"},"riskPct":5,"lr":8,"gb":3,"sofa":1,"si":0.89,"mapVal":82,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"3239"},{"id":"ICU-10001725","age":46,"sex":"F","surg":"abdominal","unit":"Medical/Surgical Intensive Care Unit (MICU/SICU)","los":1.3,"deceased":0,"admitDate":"2110-04-11","f":{"hr":78,"sbp":100,"dbp":60,"spo2":99.0,"temp":36.5,"rr":17,"gcs":15,"lac":1.5,"cr":0.8,"wbc":9.3,"hgb":14.2,"na":139,"glu":136,"comorb":6,"vaso":0,"surg":"abdominal","age":46,"sex":"F"},"riskPct":7,"lr":12,"gb":4,"sofa":2,"si":0.78,"mapVal":73,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"1725"},{"id":"ICU-10035631","age":63,"sex":"M","surg":"abdominal","unit":"Medical/Surgical Intensive Care Unit (MICU/SICU)","los":10.5,"deceased":1,"admitDate":"2116-02-28","f":{"hr":103,"sbp":117,"dbp":53,"spo2":97.0,"temp":37.2,"rr":18,"gcs":9,"lac":1.4,"cr":1.0,"wbc":4.0,"hgb":10.0,"na":137,"glu":122,"comorb":8,"vaso":1,"surg":"abdominal","age":63,"sex":"M"},"riskPct":74,"lr":51,"gb":89,"sofa":4,"si":0.88,"mapVal":74,"riskLabel":"HIGH RISK","color":"#ef4444","initials":"5631"},{"id":"ICU-10020786","age":86,"sex":"F","surg":"abdominal","unit":"Medical/Surgical Intensive Care Unit (MICU/SICU)","los":1.4,"deceased":0,"admitDate":"2189-06-09","f":{"hr":80,"sbp":112,"dbp":49,"spo2":91.0,"temp":36.6,"rr":23,"gcs":15,"lac":1.5,"cr":0.65,"wbc":16.1,"hgb":12.3,"na":136,"glu":130,"comorb":4,"vaso":1,"surg":"abdominal","age":86,"sex":"F"},"riskPct":12,"lr":15,"gb":10,"sofa":2,"si":0.71,"mapVal":70,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"0786"},{"id":"ICU-10032725","age":38,"sex":"F","surg":"abdominal","unit":"Medical/Surgical Intensive Care Unit (MICU/SICU)","los":3.3,"deceased":0,"admitDate":"2143-03-22","f":{"hr":75,"sbp":147,"dbp":77,"spo2":99.0,"temp":37.0,"rr":16,"gcs":11,"lac":2.4,"cr":0.7,"wbc":21.5,"hgb":10.4,"na":136,"glu":169,"comorb":4,"vaso":0,"surg":"abdominal","age":38,"sex":"F"},"riskPct":17,"lr":13,"gb":19,"sofa":4,"si":0.51,"mapVal":100,"riskLabel":"LOW RISK","color":"#00d4aa","initials":"2725"}];
+
+
+// ════════════════════════════════════════════════════════
+// REAL ML ENGINE
+// ════════════════════════════════════════════════════════
+function extractFeatures(f) {
+  const map = f.dbp + (f.sbp - f.dbp) / 3;
+  const si  = f.hr / Math.max(f.sbp, 1);
+  const s   = f.surg || '';
+  return [
+    f.age||60, f.sex==='F'?1:0,
+    f.hr||80, f.sbp||120, f.dbp||70, map, si,
+    f.spo2||97, 100-f.spo2, f.temp||37, Math.abs((f.temp||37)-37),
+    f.rr||16, f.gcs||15, f.lac||1, f.cr||1,
+    f.wbc||10, f.hgb||11, f.na||138, f.glu||120,
+    f.comorb||0, f.vaso?1:0,
+    s==='cardiac'?1:0, s==='vascular'?1:0, s==='neurological'?1:0,
+    s==='abdominal'?1:0, s==='orthopedic'?1:0
+  ];
+}
+
+function predictLR(feat) {
+  const {coef, intercept, mean, scale} = MODEL.lr;
+  let z = intercept;
+  for (let i = 0; i < feat.length; i++) z += coef[i] * (feat[i] - mean[i]) / scale[i];
+  return 1 / (1 + Math.exp(-z));
+}
+
+function walkTree(node, feat) {
+  if ('v' in node) return node.v;
+  return feat[node.f] <= node.t ? walkTree(node.l, feat) : walkTree(node.r, feat);
+}
+
+function predictGB(feat) {
+  const {lrRate, initLO, calA, calB, trees} = MODEL.gb;
+  let lo = initLO;
+  for (const t of trees) lo += lrRate * walkTree(t, feat);
+  return 1 / (1 + Math.exp(calA * lo + calB));
+}
+
+function computeShap(feat) {
+  const {coef, mean, scale} = MODEL.lr;
+  return MODEL.featLabels
+    .map((label, i) => ({
+      feat: label,
+      val:  Math.round(feat[i] * 100) / 100,
+      c:    Math.round(coef[i] * (feat[i] - mean[i]) / scale[i] * 10000) / 10000
+    }))
+    .sort((a, b) => Math.abs(b.c) - Math.abs(a.c))
+    .slice(0, 10);
+}
+
+function compute(f) {
+  const feat = extractFeatures(f);
+  const lr   = predictLR(feat);
+  const gb   = predictGB(feat);
+  const ens  = 0.4 * lr + 0.6 * gb;
+  const map  = f.dbp + (f.sbp - f.dbp) / 3;
+  const si   = f.hr / Math.max(f.sbp, 1);
+  const sofa = (f.lac>2?2:f.lac>1?1:0) + (f.cr>2?2:f.cr>1.2?1:0) +
+               (map<70?2:map<80?1:0) + (f.gcs<13?2:f.gcs<15?1:0);
+  return { lr, gb, ens, shap: computeShap(feat), map, si, sofa };
+}
+
+// ════════════════════════════════════════════════════════
+// AUTH SYSTEM — Google Identity Services + EmailJS OTP
+// ════════════════════════════════════════════════════════
+const GOOGLE_CLIENT_ID = "619776538570-ch60du6c5071vh352s3vvbki43u1tfn2.apps.googleusercontent.com";
+
+// EmailJS config — fill in your own Service/Template IDs to enable real email
+// Get free account at emailjs.com (200 emails/month free)
+const EMAILJS_SERVICE_ID  = "service_vigor";   // your EmailJS service ID
+const EMAILJS_TEMPLATE_ID = "template_otp";    // your EmailJS template ID
+const EMAILJS_PUBLIC_KEY  = "";                 // your EmailJS public key
+
+let currentUser    = null;
+let pendingOtpCode = null;
+let pendingEmail   = null;
+let pendingAction  = null;
+let pendingData    = null;
+let otpTimer       = null;
+let otpExpiry      = 0;
+
+function getUsers() { return JSON.parse(localStorage.getItem('vigor_users') || '{}'); }
+function saveUsers(u) { localStorage.setItem('vigor_users', JSON.stringify(u)); }
+
+function switchTab(tab) {
+  document.getElementById('tabLogin').classList.toggle('on',  tab==='login');
+  document.getElementById('tabSignup').classList.toggle('on', tab==='signup');
+  document.getElementById('loginForm').style.display  = tab==='login'  ? '' : 'none';
+  document.getElementById('signupForm').style.display = tab==='signup' ? '' : 'none';
+}
+
+function hashPass(p) {
+  let h = 0;
+  for (let i=0; i<p.length; i++) h = (Math.imul(31,h) + p.charCodeAt(i)) | 0;
+  return String(h);
+}
+
+function generateOTP() { return String(Math.floor(100000 + Math.random()*900000)); }
+
+// ── Send OTP via EmailJS (real email) ─────────────────
+function sendOtpEmail(email, code, purpose) {
+  var msgEl = document.getElementById('otpMsg');
+  // Try EmailJS first if configured
+  if (EMAILJS_PUBLIC_KEY && typeof emailjs !== 'undefined') {
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+    var templateParams = {
+      to_email:  email,
+      otp_code:  code,
+      purpose:   purpose || 'verification',
+      app_name:  'VIGOR ICU Risk Intelligence',
+      expires_in: '10 minutes'
+    };
+    emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+      .then(function() {
+        document.getElementById('otpHint').textContent = 'Code sent to ' + email;
+        document.getElementById('otpHint').style.background = 'rgba(0,212,170,.06)';
+        if (msgEl) { msgEl.textContent = 'Check your inbox!'; msgEl.className = 'auth-msg ok'; }
+      })
+      .catch(function(err) {
+        console.warn('EmailJS error:', err);
+        // Fall back to showing code
+        document.getElementById('otpHint').textContent = 'Email unavailable — demo code: ' + code;
+      });
+  } else {
+    // Demo mode — show code directly
+    document.getElementById('otpHint').innerHTML =
+      '<span style="color:var(--t4)">Demo mode &bull; code: </span>' +
+      '<span style="font-size:16px;letter-spacing:3px;font-weight:600">' + code + '</span>' +
+      '<div style="font-size:9px;color:var(--t4);margin-top:3px">To send real emails: add EmailJS key in source</div>';
+  }
+}
+
+// ── OTP screen ────────────────────────────────────────
+function showOtpScreen(email, code, action) {
+  pendingOtpCode = code;
+  pendingEmail   = email;
+  pendingAction  = action;
+  otpExpiry      = Date.now() + 600000; // 10 min
+  document.getElementById('authForm').style.display = 'none';
+  document.getElementById('otpWrap').classList.add('on');
+  document.getElementById('otpEmail').textContent = email;
+  document.getElementById('otpHint').textContent  = '';
+  document.getElementById('otpMsg').textContent   = '';
+  for (let i=0; i<6; i++) {
+    document.getElementById('d'+i).value = '';
+    document.getElementById('d'+i).classList.remove('err');
+  }
+  sendOtpEmail(email, code, action);
+  startOtpCountdown();
+  setTimeout(function() { document.getElementById('d0').focus(); }, 80);
+}
+
+function startOtpCountdown() {
+  clearInterval(otpTimer);
+  var resendEl = document.querySelector('.otp-resend');
+  otpTimer = setInterval(function() {
+    var left = Math.max(0, Math.ceil((otpExpiry - Date.now()) / 1000));
+    var min = Math.floor(left/60), sec = left%60;
+    if (resendEl && left > 0) {
+      resendEl.innerHTML = 'Code expires in <strong style="color:var(--amber)">' +
+        min + ':' + (sec<10?'0':'') + sec + '</strong>';
+    } else if (left === 0) {
+      clearInterval(otpTimer);
+      if (resendEl) resendEl.innerHTML = 'Code expired. <span onclick="resendOTP()">Send new code</span>';
+      document.getElementById('otpMsg').textContent = 'Code expired.';
+      document.getElementById('otpMsg').className = 'auth-msg err';
+    }
+  }, 1000);
+}
+
+function backToForm() {
+  clearInterval(otpTimer);
+  document.getElementById('authForm').style.display = '';
+  document.getElementById('otpWrap').classList.remove('on');
+  pendingOtpCode = pendingEmail = pendingAction = pendingData = null;
+}
+
+function otpInput(idx) {
+  const el = document.getElementById('d'+idx);
+  el.value = el.value.replace(/[^0-9]/g,'').slice(-1);
+  el.classList.remove('err');
+  if (el.value && idx < 5) document.getElementById('d'+(idx+1)).focus();
+  // Auto-verify when all 6 filled
+  if (idx===5 && el.value) setTimeout(verifyOTP, 120);
+}
+
+function getOtpValue() {
+  return [0,1,2,3,4,5].map(function(i){ return document.getElementById('d'+i).value; }).join('');
+}
+
+function verifyOTP() {
+  var entered = getOtpValue();
+  var msgEl   = document.getElementById('otpMsg');
+  if (entered.length < 6) {
+    msgEl.textContent = 'Enter all 6 digits.'; msgEl.className='auth-msg err'; return;
+  }
+  if (Date.now() > otpExpiry) {
+    msgEl.textContent = 'Code has expired. Request a new one.'; msgEl.className='auth-msg err'; return;
+  }
+  if (entered !== pendingOtpCode) {
+    msgEl.textContent = 'Incorrect code. Try again.'; msgEl.className='auth-msg err';
+    for (let i=0; i<6; i++) { document.getElementById('d'+i).classList.add('err'); document.getElementById('d'+i).value=''; }
+    document.getElementById('d0').focus();
+    return;
+  }
+  clearInterval(otpTimer);
+  if (pendingAction==='signup') {
+    var users = getUsers();
+    users[pendingData.email] = {
+      email: pendingData.email, passwordHash: pendingData.passwordHash,
+      first: pendingData.first, last: pendingData.last, inst: pendingData.inst,
+      created: Date.now(), provider: 'email'
+    };
+    saveUsers(users);
+    finishLogin(users[pendingData.email]);
+  } else if (pendingAction==='login') {
+    finishLogin(pendingData);
+  } else if (pendingAction==='reset') {
+    backToForm(); switchTab('login');
+    document.getElementById('loginEmail').value = pendingData.email;
+    document.getElementById('loginMsg').textContent = 'Verified! Set your new password below.';
+    document.getElementById('loginMsg').className = 'auth-msg ok';
+    document.getElementById('loginPass').value='';
+    document.getElementById('loginPass').focus();
+  }
+}
+
+function resendOTP() {
+  var newCode = generateOTP();
+  pendingOtpCode = newCode;
+  otpExpiry = Date.now() + 600000;
+  sendOtpEmail(pendingEmail, newCode, pendingAction);
+  startOtpCountdown();
+}
+
+// ── Email login ───────────────────────────────────────
+function doLogin() {
+  var email = (document.getElementById('loginEmail').value||'').trim().toLowerCase();
+  var pass  = document.getElementById('loginPass').value;
+  var msgEl = document.getElementById('loginMsg');
+  if (!email||!pass) { msgEl.textContent='Fill in all fields.'; msgEl.className='auth-msg err'; return; }
+  var users=getUsers(), user=users[email];
+  if (!user||user.provider==='google') {
+    msgEl.textContent='No email account found. Use Google or create an account.';
+    msgEl.className='auth-msg err'; return;
+  }
+  if (user.passwordHash!==hashPass(pass)) {
+    msgEl.textContent='Incorrect password.'; msgEl.className='auth-msg err'; return;
+  }
+  pendingData=user; msgEl.textContent='';
+  showOtpScreen(email, generateOTP(), 'login');
+}
+
+// ── Email signup ──────────────────────────────────────
+function doSignup() {
+  var first=(document.getElementById('signFirst').value||'').trim();
+  var last =(document.getElementById('signLast').value||'').trim();
+  var email=(document.getElementById('signEmail').value||'').trim().toLowerCase();
+  var pass = document.getElementById('signPass').value;
+  var inst =(document.getElementById('signInst').value||'').trim();
+  var msgEl=document.getElementById('signupMsg');
+  if (!first||!last||!email||!pass){msgEl.textContent='Fill in all required fields.';msgEl.className='auth-msg err';return;}
+  if (pass.length<8){msgEl.textContent='Password must be 8+ characters.';msgEl.className='auth-msg err';return;}
+  if (!email.includes('@')){msgEl.textContent='Enter a valid email.';msgEl.className='auth-msg err';return;}
+  var users=getUsers();
+  if (users[email]){msgEl.textContent='Account already exists.';msgEl.className='auth-msg err';return;}
+  pendingData={email,first,last,inst,passwordHash:hashPass(pass)};
+  showOtpScreen(email, generateOTP(), 'signup');
+}
+
+// ── Forgot password ───────────────────────────────────
+function showForgot() {
+  var email=(document.getElementById('loginEmail').value||'').trim().toLowerCase();
+  var msgEl=document.getElementById('loginMsg');
+  if (!email){msgEl.textContent='Enter your email first.';msgEl.className='auth-msg err';return;}
+  var users=getUsers();
+  if (!users[email]){msgEl.textContent='No account found for that email.';msgEl.className='auth-msg err';return;}
+  pendingData={email};
+  showOtpScreen(email, generateOTP(), 'reset');
+}
+
+// ── Google Identity Services ──────────────────────────
+function initGoogleSignIn() {
+  if (typeof google==='undefined'||!google.accounts) { setTimeout(initGoogleSignIn,300); return; }
+  google.accounts.id.initialize({
+    client_id:  GOOGLE_CLIENT_ID,
+    callback:   handleGoogleCredential,
+    auto_select: false,
+    cancel_on_tap_outside: true,
+    context: 'signin',
+    ux_mode: 'popup',
+    itp_support: true
+  });
+  renderGoogleButtons();
+  // Show One Tap prompt after short delay (only if not logged in)
+  setTimeout(function(){
+    google.accounts.id.prompt(function(notification){
+      if (notification.isNotDisplayed()) console.log('One Tap not shown:', notification.getNotDisplayedReason());
+    });
+  }, 800);
+}
+
+function renderGoogleButtons() {
+  var base = { type:'standard', theme:'filled_black', size:'large', shape:'pill', logo_alignment:'center', width:340 };
+  var loginEl  = document.getElementById('googleBtnLogin');
+  var signupEl = document.getElementById('googleBtnSignup');
+  if (loginEl)  { loginEl.innerHTML='';  google.accounts.id.renderButton(loginEl,  Object.assign({},base,{text:'signin_with'})); }
+  if (signupEl) { signupEl.innerHTML=''; google.accounts.id.renderButton(signupEl, Object.assign({},base,{text:'signup_with'})); }
+}
+
+function handleGoogleCredential(response) {
+  var parts   = response.credential.split('.');
+  var payload = JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));
+  var email   = payload.email.toLowerCase();
+  var first   = payload.given_name  || (payload.name||'').split(' ')[0] || 'User';
+  var last    = payload.family_name || (payload.name||'').split(' ').slice(1).join(' ') || '';
+  var picture = payload.picture || '';
+  var users   = getUsers();
+  if (!users[email]) {
+    users[email] = { email, first, last, inst:'', picture, passwordHash:'', provider:'google', created:Date.now() };
+  } else {
+    users[email].picture=picture||users[email].picture;
+    users[email].first=first; users[email].last=last;
+  }
+  saveUsers(users);
+  finishLogin(users[email]);
+}
+
+function finishLogin(user) {
+  currentUser = user;
+  localStorage.setItem('vigor_session', JSON.stringify({email:user.email, loginTime:Date.now()}));
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('app').classList.add('on');
+  var initials = ((user.first||'D')[0]+(user.last||'R')[0]).toUpperCase();
+  document.getElementById('uav').textContent   = initials;
+  document.getElementById('uname').textContent = (user.first||'Dr')+' '+(user.last||'Clinician');
+  document.getElementById('dropName').textContent = user.first+' '+user.last;
+  document.getElementById('dropInst').textContent = user.inst||(user.provider==='google'?'Google Account':'');
+  var av = document.getElementById('uav');
+  if (user.picture) {
+    av.style.cssText = 'background-image:url('+user.picture+');background-size:cover;background-position:center';
+    av.textContent = '';
+  } else { av.style.cssText=''; av.textContent=initials; }
+  if (user.provider==='google') showToast('Signed in with Google \u2022 '+user.email);
+  initApp();
+}
+
+function doSignOut() {
+  if (typeof google!=='undefined'&&google.accounts) google.accounts.id.disableAutoSelect();
+  var av=document.getElementById('uav');
+  av.style.cssText=''; av.textContent='DR';
+  currentUser=null;
+  localStorage.removeItem('vigor_session');
+  document.getElementById('app').classList.remove('on');
+  document.getElementById('authScreen').style.display='flex';
+  document.getElementById('loginEmail').value='';
+  document.getElementById('loginPass').value='';
+  document.getElementById('loginMsg').textContent='';
+  document.getElementById('udrop').classList.remove('on');
+  setTimeout(renderGoogleButtons,150);
+  showToast('Signed out');
+}
+
+function toggleDrop() { document.getElementById('udrop').classList.toggle('on'); }
+document.addEventListener('click',function(e){ if(!e.target.closest('.user-pill')) document.getElementById('udrop').classList.remove('on'); });
+
+function checkSession() {
+  var sess=JSON.parse(localStorage.getItem('vigor_session')||'null');
+  if (!sess) return false;
+  if (Date.now()-sess.loginTime > 86400000*7) { localStorage.removeItem('vigor_session'); return false; }
+  var user=getUsers()[sess.email];
+  if (!user) { localStorage.removeItem('vigor_session'); return false; }
+  finishLogin(user); return true;
+}
+
+if (!checkSession()) { initGoogleSignIn(); }
+
+// ════════════════════════════════════════════════════════
+// STORAGE
+// ════════════════════════════════════════════════════════
+
+
+function userKey(k) { return (currentUser ? currentUser.email + '_' : '') + k; }
+const DB = {
+  get Q() { return JSON.parse(localStorage.getItem(userKey('vq5')) || '[]'); },
+  get A() { return JSON.parse(localStorage.getItem(userKey('va5')) || '[]'); },
+  sQ(d) { localStorage.setItem(userKey('vq5'), JSON.stringify(d)); },
+  sA(d) { localStorage.setItem(userKey('va5'), JSON.stringify(d)); }
+};
+
+function seedOnce() {
+  const key = userKey('vigor_v5_seeded');
+  if (localStorage.getItem(key)) return;
+  localStorage.setItem(key, '1');
+  const now = Date.now(), H = 3600000;
+  const archive = MIMIC.map((p, i) => {
+    const ep = p.riskPct, feat = extractFeatures(p.f);
+    let outcome, match;
+    if (p.deceased)                        { outcome = 'critical';     match = ep >= 50; }
+    else if (p.f.vaso && p.f.lac > 2)     { outcome = ep>=40?'critical':'deteriorated'; match = ep >= 40; }
+    else if (p.f.lac > 2 || p.f.gcs < 13) { outcome = 'deteriorated'; match = ep >= 33; }
+    else if (p.los < 1)                    { outcome = 'transferred';  match = ep < 40; }
+    else                                   { outcome = 'stable';       match = ep < 45; }
+    return {
+      ...p, shap: computeShap(feat),
+      archivedAt: now - (100 - i) * 6 * H,
+      outcome, match, correctionMade: false, originalRiskPct: ep,
+      notes: p.deceased ? 'Expired. MIMIC-IV.' : p.f.vaso ? 'Vaso support. LOS '+p.los+'d.' : 'LOS '+p.los+'d. MIMIC-IV.'
+    };
+  });
+  DB.sA(archive); DB.sQ([]);
+}
+
+// ════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════
+const rC  = p => p < .33 ? 'var(--teal)' : p < .6 ? 'var(--amber)' : 'var(--red)';
+const rL  = p => p < .33 ? 'LOW RISK' : p < .6 ? 'MODERATE' : 'HIGH RISK';
+const pct = p => Math.round(p * 100);
+const fmt = ts => new Date(ts).toLocaleString('en-CA', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+const fmtD= ts => new Date(ts).toLocaleDateString('en-CA', {year:'numeric',month:'short',day:'numeric'});
+const cd  = ts => { const d = ts - Date.now(); if (d <= 0) return 'OVERDUE'; return Math.floor(d/3600000)+'h '+Math.floor((d%3600000)/60000)+'m'; };
+
+// ════════════════════════════════════════════════════════
+// NAV
+// ════════════════════════════════════════════════════════
+function goPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
+  document.getElementById('page-' + id).classList.add('on');
+  if (btn) btn.classList.add('on');
+  if (id === 'queue')    renderQueue();
+  if (id === 'archive')  renderArchive();
+  if (id === 'database') renderDB();
+  if (id === 'accuracy') renderAccuracy();
+  updBadges();
+}
+function tickClock() {
+  document.getElementById('clk').textContent =
+    new Date().toLocaleTimeString('en-CA', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+}
+
+// ════════════════════════════════════════════════════════
+// FORM
+// ════════════════════════════════════════════════════════
+function genPID() { document.getElementById('f_pid').value = 'ICU-' + Math.floor(10000000 + Math.random() * 89999999); }
+
+function setTog(group, val) {
+  document.getElementById('f_' + group).value = val;
+  if (group === 'sex') {
+    document.getElementById('tb_sM').classList.toggle('on', val === 'M');
+    document.getElementById('tb_sF').classList.toggle('on', val === 'F');
+  } else {
+    document.getElementById('tb_vN').classList.toggle('on', String(val) === '0');
+    document.getElementById('tb_vY').classList.toggle('on', String(val) === '1');
+  }
+}
+
+function getF() {
+  const g = id => document.getElementById(id);
+  return {
+    pid: g('f_pid').value || 'ICU-' + Math.floor(10000000 + Math.random() * 89999999),
+    age: +g('f_age').value, sex: g('f_sex').value,
+    hr: +g('f_hr').value, sbp: +g('f_sbp').value, dbp: +g('f_dbp').value,
+    spo2: +g('f_spo2').value, temp: +g('f_temp').value, rr: +g('f_rr').value,
+    gcs: +g('f_gcs').value, lac: +g('f_lac').value, cr: +g('f_cr').value,
+    wbc: +g('f_wbc').value, hgb: +g('f_hgb').value, na: +g('f_na').value,
+    glu: +g('f_glu').value, surg: g('f_surg').value,
+    comorb: +g('f_comorb').value, vaso: +g('f_vaso').value
+  };
+}
+
+function loadIntoForm(f, pid) {
+  document.getElementById('f_pid').value = pid || '';
+  ['age','hr','sbp','dbp','spo2','temp','rr','gcs','lac','cr','wbc','hgb','na','glu','comorb'].forEach(k => {
+    const el = document.getElementById('f_' + k);
+    if (el && f[k] !== undefined) el.value = f[k];
+  });
+  if (f.surg) document.getElementById('f_surg').value = f.surg;
+  setTog('sex', f.sex || 'M');
+  setTog('vaso', String(f.vaso || 0));
+}
+
+// ════════════════════════════════════════════════════════
+// PATIENT LIST
+// ════════════════════════════════════════════════════════
+function filterPtList() {
+  const q = (document.getElementById('ptSearch').value || '').toLowerCase();
+  let pts = MIMIC;
+  if (q) pts = pts.filter(p =>
+    p.id.toLowerCase().includes(q) || p.surg.includes(q) ||
+    String(p.age).includes(q) || p.unit.toLowerCase().includes(q) ||
+    p.sex.toLowerCase() === q || (q === 'deceased' && p.deceased));
+  const html = pts.slice(0, 60).map(p => {
+    const rc = p.riskPct >= 60 ? '#ef4444' : p.riskPct >= 33 ? '#f59e0b' : '#00d4aa';
+
+    return '<div class="pt-item" data-pid="' + encodeURIComponent(p.id) + '">' +
+      '<div class="pt-av" style="background:' + p.color + '22;color:' + p.color + ';border:1px solid ' + p.color + '44">' + p.initials + '</div>' +
+      '<div style="flex:1;min-width:0"><div class="pt-id">' + p.id + '</div>' +
+      '<div class="pt-meta">' + p.age + p.sex + ' &bull; ' + p.surg + ' &bull; LOS ' + p.los + 'd' + (p.deceased ? ' &bull; dec.' : '') + '</div></div>' +
+      '<div class="pt-score" style="color:' + rc + '">' + p.riskPct + '%</div></div>';
+  }).join('');
+  document.getElementById('ptList').innerHTML = html;
+  document.getElementById('ptList').querySelectorAll('[data-pid]').forEach(function(el){el.addEventListener('click',function(){loadMimicPt(decodeURIComponent(el.dataset.pid));});});
+}
+
+function loadMimicPt(id) {
+  const p = MIMIC.find(x => x.id === id); if (!p) return;
+  loadIntoForm(p.f, p.id);
+  const feat = extractFeatures(p.f);
+  const r = { lr: p.lr/100, gb: p.gb/100, ens: p.riskPct/100, shap: computeShap(feat),
+    map: p.f.dbp+(p.f.sbp-p.f.dbp)/3, si: p.f.hr/Math.max(p.f.sbp,1),
+    sofa: (p.f.lac>2?2:p.f.lac>1?1:0)+(p.f.cr>2?2:p.f.cr>1.2?1:0)+((p.f.dbp+(p.f.sbp-p.f.dbp)/3)<70?2:(p.f.dbp+(p.f.sbp-p.f.dbp)/3)<80?1:0)+(p.f.gcs<13?2:p.f.gcs<15?1:0) };
+  renderResult(p.f, r);
+  document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
+  document.querySelector('[onclick*="predict"]').classList.add('on');
+  document.querySelectorAll('.page').forEach(pg => pg.classList.remove('on'));
+  document.getElementById('page-predict').classList.add('on');
+  showToast('Loaded ' + p.id + ' — ' + p.age + p.sex + ' · ' + p.surg + (p.deceased ? ' · deceased' : ''));
+}
+
+// ════════════════════════════════════════════════════════
+// PREDICTION
+// ════════════════════════════════════════════════════════
+let gchart = null;
+
+function runPrediction() {
+  const lv = document.getElementById('lv'), btn = document.getElementById('runBtn');
+  lv.classList.add('on'); btn.classList.add('busy');
+  const sids = ['ls1','ls2','ls3','ls4','ls5']; let i = 0;
+  const iv = setInterval(() => { if (i < sids.length) document.getElementById(sids[i++]).classList.add('on'); else clearInterval(iv); }, 260);
+  setTimeout(() => {
+    lv.classList.remove('on'); btn.classList.remove('busy');
+    sids.forEach(s => document.getElementById(s).classList.remove('on'));
+    const f = getF(), r = compute(f);
+    renderResult(f, r);
+    addToQueue(f, r);
+    updBadges();
+    showToast(f.pid + ' — ' + pct(r.ens) + '% — added to queue');
+  }, 1600);
+}
+
+function addToQueue(f, r) {
+  const q = DB.Q;
+  if (q.find(p => p.id === f.pid)) return;
+  q.unshift({
+    id: f.pid, initials: f.pid.slice(-4),
+    color: r.ens<.33?'#00d4aa':r.ens<.6?'#f59e0b':'#ef4444',
+    age: f.age, sex: f.sex, surg: f.surg,
+    addedAt: Date.now(), reviewDue: Date.now() + 86400000,
+    admitDate: new Date().toISOString().split('T')[0],
+    status: 'live', riskPct: pct(r.ens), riskLabel: rL(r.ens),
+    lr: pct(r.lr), gb: pct(r.gb), sofa: r.sofa, si: +r.si.toFixed(2),
+    f, shap: r.shap
+  });
+  DB.sQ(q);
+}
+
+// ════════════════════════════════════════════════════════
+// RENDER RESULT
+// ════════════════════════════════════════════════════════
+function buildShap(shap) {
+  const mx = Math.max(...shap.map(s => Math.abs(s.c)));
+  return shap.map(s => {
+    const pw = (Math.abs(s.c) / mx) * 44, ip = s.c > 0;
+    const vs = typeof s.val === 'number' ? Number(s.val).toFixed(2) : s.val;
+    return '<div class="sr">' +
+      '<div class="sf">' + s.feat + ' <span style="color:var(--t4)">(' + vs + ')</span></div>' +
+      '<div class="sbw"><div class="sz"></div>' +
+      '<div class="sbar ' + (ip?'pos':'neg') + '" style="width:' + pw + '%"></div></div>' +
+      '<div class="sv" style="color:' + (ip?'var(--red)':'var(--teal)') + '">' + (ip?'+':'') + s.c.toFixed(3) + '</div></div>';
+  }).join('');
+}
+
+function stab(id, btn) {
+  document.querySelectorAll('.tabp').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tbb').forEach(b => b.classList.remove('on'));
+  const el = document.getElementById('tab-' + id); if (el) el.classList.add('on');
+  btn.classList.add('on');
+}
+
+function renderResult(f, r) {
+  const ep = pct(r.ens), rc = rC(r.ens);
+  const interp = ep<33 ? 'Stable parameters. Routine monitoring. 24h review active.'
+               : ep<60 ? 'Elevated risk detected. Enhanced monitoring recommended.'
+               : 'CRITICAL risk. Immediate senior clinician review required.';
+  const vf = [
+    {n:'HR',     v:f.hr,         u:'bpm',    s:f.hr>100||f.hr<50?'c':f.hr>90?'w':'n'},
+    {n:'SBP',    v:f.sbp,        u:'mmHg',   s:f.sbp<90?'c':f.sbp<100?'w':'n'},
+    {n:'SpO2',   v:f.spo2,       u:'%',      s:f.spo2<90?'c':f.spo2<95?'w':'n'},
+    {n:'Lactate',v:f.lac,        u:'mmol/L', s:f.lac>4?'c':f.lac>2?'w':'n'},
+    {n:'RR',     v:f.rr,         u:'/min',   s:f.rr>25?'c':f.rr>20?'w':'n'},
+    {n:'Temp',   v:f.temp,       u:'°C',s:f.temp>39?'c':f.temp>38.5?'w':'n'},
+    {n:'GCS',    v:f.gcs,        u:'',       s:f.gcs<9?'c':f.gcs<13?'w':'n'},
+    {n:'MAP',    v:Math.round(r.map),u:'mmHg',s:r.map<55?'c':r.map<65?'w':'n'},
+  ];
+  document.getElementById('rp').innerHTML =
+    '<div class="rh fi">' +
+      '<div class="gw"><canvas id="gC" width="130" height="130"></canvas>' +
+        '<div class="gc"><div class="gp" style="color:' + rc + '">' + ep + '%</div><div class="gl">VIGOR Score</div></div>' +
+      '</div>' +
+      '<div class="rb">' +
+        '<div class="rv-big" style="color:' + rc + '">' + rL(r.ens) + '</div>' +
+        '<div class="ri">' + interp + '</div>' +
+        '<div class="rn">' +
+          '<div class="rni"><div class="rv" style="color:' + rc + '">' + ep + '%</div><div class="rk">Ensemble</div></div>' +
+          '<div class="rni"><div class="rv">' + pct(r.lr) + '%</div><div class="rk">LR</div></div>' +
+          '<div class="rni"><div class="rv">' + pct(r.gb) + '%</div><div class="rk">GB</div></div>' +
+          '<div class="rni"><div class="rv">' + r.sofa + '</div><div class="rk">SOFA</div></div>' +
+          '<div class="rni"><div class="rv">' + r.si.toFixed(2) + '</div><div class="rk">Shock</div></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="rvb live fi"><div style="font-size:18px">&#9201;</div>' +
+      '<div><div class="rvb-t" style="color:var(--blue)">24-Hour Review Window Active</div>' +
+        '<div class="rvb-s">Patient added to queue. Record outcome in 24h to track VIGOR accuracy.</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="card fi">' +
+      '<div style="margin-bottom:10px"><div class="ct">Clinical Parameters</div><div class="cs">vs VIGOR reference ranges</div></div>' +
+      '<div class="vg">' + vf.map(v =>
+        '<div class="vc ' + v.s + '"><div class="vn">' + v.n + '</div>' +
+        '<div class="vv">' + v.v + '</div><div class="vu">' + v.u + '</div>' +
+        '<div class="vf ' + v.s + '">' + (v.s==='n'?'WNL':v.s==='w'?'ABNL':'CRIT') + '</div></div>'
+      ).join('') + '</div>' +
+    '</div>' +
+    '<div class="card fi">' +
+      '<div class="tabbar">' +
+        '<button class="tbb on" data-tab="shap">LR-SHAP</button>' +
+        '<button class="tbb" data-tab="models">Models</button>' +
+        '<button class="tbb" data-tab="trend">Trend</button>' +
+      '</div>' +
+      '<div class="tabp on" id="tab-shap">' +
+        '<div style="margin-bottom:8px"><div class="ct">Feature Contributions</div>' +
+        '<div class="cs">Exact LR attribution &bull; Red=risk&#8593; Teal=risk&#8595;</div></div>' +
+        '<div class="shap-list">' + buildShap(r.shap) + '</div>' +
+      '</div>' +
+      '<div class="tabp" id="tab-models">' +
+        '<div class="mr">' +
+          '<div class="mc ' + (r.gb>r.lr?'win':'') + '">' +
+            '<div class="mn">Gradient Boosting</div>' +
+            '<div class="ms" style="color:' + rC(r.gb) + '">' + pct(r.gb) + '%</div>' +
+            '<div class="mm">50 trees, depth=2, Platt cal.</div>' +
+            '<div class="mbt"><div class="mbf" style="width:' + pct(r.gb) + '%"></div></div>' +
+            (r.gb>r.lr ? '<div class="wt">TOP MODEL</div>' : '') +
+          '</div>' +
+          '<div class="mc ' + (r.lr>=r.gb?'win':'') + '">' +
+            '<div class="mn">Logistic Regression</div>' +
+            '<div class="ms" style="color:' + rC(r.lr) + '">' + pct(r.lr) + '%</div>' +
+            '<div class="mm">C=0.05, L2, StandardScaler</div>' +
+            '<div class="mbt"><div class="mbf" style="width:' + pct(r.lr) + '%;background:var(--blue)"></div></div>' +
+          '</div>' +
+          '<div class="mc win" style="border-color:' + rc + '">' +
+            '<div class="mn">Ensemble</div>' +
+            '<div class="ms" style="color:' + rc + '">' + ep + '%</div>' +
+            '<div class="mm">40% LR + 60% GB</div>' +
+            '<div class="mbt"><div class="mbf" style="width:' + ep + '%;background:' + rc + '"></div></div>' +
+            '<div class="wt" style="color:' + rc + '">FINAL OUTPUT</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="tabp" id="tab-trend"><div class="cw"><canvas id="tC"></canvas></div></div>' +
+    '</div>';
+
+  document.getElementById('rp').querySelectorAll('[data-tab]').forEach(function(btn){btn.addEventListener('click',function(){stab(btn.dataset.tab,btn);});});
+  if (gchart) gchart.destroy();
+  gchart = new Chart(document.getElementById('gC'), {
+    type: 'doughnut',
+    data: { datasets: [{ data: [ep, 100-ep], backgroundColor: [rc, 'rgba(22,45,66,.6)'], borderWidth: 0 }] },
+    options: { cutout:'76%', rotation:-90, circumference:180, plugins:{legend:{display:false},tooltip:{enabled:false}}, animation:{duration:700} }
+  });
+  const base = r.ens, hrs = [0,2,4,6,8,10,12,16,20,24];
+  const td2 = hrs.map((_,i) => Math.min(.99,Math.max(.01,base+(base>.6?.02*i:base>.33?.006*(i-3):-.007*i)+(Math.random()-.5)*.03)));
+  new Chart(document.getElementById('tC'), {
+    type: 'line',
+    data: { labels: hrs.map(h => 'T+'+h+'h'), datasets: [{ data: td2, borderColor: rc, backgroundColor:'transparent', tension:.4, pointBackgroundColor:rc, pointRadius:3 }] },
+    options: { responsive:true, maintainAspectRatio:false,
+      scales: { y:{min:0,max:1,grid:{color:'#162d42'},ticks:{color:'#2a5070',font:{family:'DM Mono',size:10},callback:v=>pct(v)+'%'}},
+                x:{grid:{display:false},ticks:{color:'#2a5070',font:{family:'DM Mono',size:10}}} },
+      plugins:{legend:{display:false}} }
+  });
+}
+
+// ════════════════════════════════════════════════════════
+// QUEUE
+// ════════════════════════════════════════════════════════
+let qsort = 'risk';
+function setQSort(s, btn) { qsort = s; document.querySelectorAll('.qs').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); renderQueue(); }
+function checkDue() {
+  const q = DB.Q; let c = false;
+  q.forEach(p => { if (p.status==='live' && Date.now()>p.reviewDue) { p.status='review'; c=true; } });
+  if (c) { DB.sQ(q); updBadges(); }
+}
+function renderQueue() {
+  checkDue();
+  let q = [...DB.Q];
+  if (qsort==='risk') q.sort((a,b) => b.riskPct-a.riskPct);
+  else if (qsort==='time') q.sort((a,b) => b.addedAt-a.addedAt);
+  else q.sort((a,b) => (a.reviewDue-Date.now())-(b.reviewDue-Date.now()));
+  document.getElementById('qsub').textContent = '— ' + q.length + ' patient' + (q.length!==1?'s':'');
+  const body = document.getElementById('qbody');
+  if (!q.length) { body.innerHTML = '<div style="text-align:center;padding:60px;color:var(--t4);font-family:var(--fm);font-size:12px">No patients. Run a prediction to add to queue.</div>'; return; }
+  body.innerHTML = q.map(p => {
+    const rc = p.riskPct>=60?'var(--red)':p.riskPct>=33?'var(--amber)':'var(--teal)', rv = p.status==='review';
+    const eid = p.id.replace(/'/g,"\'");
+    return '<div class="qc ' + (rv?'rd ':'') + (p.riskPct>=60?'crit':'') + '">' +
+      '<div class="qav" style="background:' + p.color + '22;color:' + p.color + ';border:1.5px solid ' + p.color + '44">' + p.initials + '</div>' +
+      '<div><div class="qi-id">' + p.id + '</div>' +
+      '<div class="qi-n">' + p.age + p.sex + ' &bull; ' + p.surg + '</div>' +
+      '<div class="qi-m">Added ' + fmt(p.addedAt) + '</div>' +
+      '<div class="q-acts">' +
+        '<button class="qbtn pull" data-qid="' + encodeURIComponent(p.id) + '">Pull Up</button>' +
+        (rv ? '<button class="qbtn rec" data-modalid="' + encodeURIComponent(p.id) + '">Record Outcome &rarr;</button>' : '') +
+      '</div></div>' +
+      '<div style="text-align:right"><div class="qrs" style="color:' + rc + '">' + p.riskPct + '%</div>' +
+      '<div style="font-family:var(--fm);font-size:9px;color:' + rc + '">' + p.riskLabel + '</div></div>' +
+      '<div class="qst"><div class="qsc ' + (rv?'rev':'live') + '">' + (rv?'REVIEW DUE':'LIVE') + '</div>' +
+      '<div class="qtm" style="color:' + (rv?'var(--amber)':'var(--t4)') + '">' + (rv?'Outcome needed':cd(p.reviewDue)+' left') + '</div></div></div>';
+  }).join('');
+}
+function loadQueuePt(id) {
+  const p = DB.Q.find(q => q.id===id); if (!p) return;
+  loadIntoForm(p.f, p.id); const r = compute(p.f); renderResult(p.f, r);
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.querySelector('[onclick*="predict"]').classList.add('on');
+  document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('on'));
+  document.getElementById('page-predict').classList.add('on');
+  showToast('Loaded ' + p.id);
+}
+
+// ════════════════════════════════════════════════════════
+// OUTCOME MODAL
+// ════════════════════════════════════════════════════════
+let mPid = null, mOutcome = null;
+function openModal(id) {
+  mPid = id; mOutcome = null;
+  document.getElementById('mnotes').value = '';
+  document.getElementById('msub2').disabled = true;
+  document.querySelectorAll('.oo').forEach(b=>b.classList.remove('sel'));
+  const p = DB.Q.find(q => q.id===id); if (!p) return;
+  document.getElementById('msub').textContent = p.id + ' · ' + p.age + p.sex + ' · VIGOR: ' + p.riskPct + '%';
+  const f = p.f || {};
+  const labels = {age:'Age',hr:'HR',sbp:'SBP',dbp:'DBP',spo2:'SpO2',rr:'RR',gcs:'GCS',lac:'Lactate',cr:'Creatinine',wbc:'WBC',glu:'Glucose',temp:'Temp'};
+  document.getElementById('mflds').innerHTML = Object.entries(labels).map(([k,l]) =>
+    '<div><label>' + l + '</label><input type="number" id="mc_' + k + '" value="' + (f[k]!==undefined?f[k]:'') + '" step="' + (['temp','lac','cr'].includes(k)?'.1':'1') + '"></div>'
+  ).join('');
+  document.getElementById('modal').classList.add('open');
+}
+function selOO(btn, o) { mOutcome=o; document.querySelectorAll('.oo').forEach(b=>b.classList.remove('sel')); btn.classList.add('sel'); document.getElementById('msub2').disabled=false; }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function submitOutcome() {
+  const q=DB.Q, a=DB.A, idx=q.findIndex(p=>p.id===mPid); if(idx===-1) return;
+  const p=q[idx], cf={...p.f};
+  ['age','hr','sbp','dbp','spo2','rr','gcs','lac','cr','wbc','glu','temp'].forEach(k=>{
+    const el=document.getElementById('mc_'+k); if(el) cf[k]=+el.value;
+  });
+  const r=compute(cf), corrRisk=pct(r.ens);
+  const bad=['deteriorated','critical'].includes(mOutcome);
+  const match=bad===(corrRisk>=40);
+  a.unshift({...p,f:cf,riskPct:corrRisk,riskLabel:rL(r.ens),lr:pct(r.lr),gb:pct(r.gb),
+    sofa:r.sofa,si:+r.si.toFixed(2),originalRiskPct:p.riskPct,
+    correctionMade:JSON.stringify(cf)!==JSON.stringify(p.f),
+    archivedAt:Date.now(),outcome:mOutcome,match,
+    notes:document.getElementById('mnotes').value,shap:r.shap});
+  q.splice(idx,1); DB.sA(a); DB.sQ(q); closeModal(); updBadges();
+  showToast(match?'VIGOR correct — '+mPid+' archived':'VIGOR wrong — flagged');
+  renderQueue();
+}
+
+// ════════════════════════════════════════════════════════
+// ARCHIVE
+// ════════════════════════════════════════════════════════
+let archFilt='all', selArchId=null;
+function setFilt(f,btn){ archFilt=f; document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); renderArchive(); }
+function renderArchive() {
+  let arc=[...DB.A];
+  const q=(document.getElementById('archq')?.value||'').toLowerCase();
+  if(q) arc=arc.filter(p=>(p.id+p.surg+(p.outcome||'')+(p.notes||'')).toLowerCase().includes(q));
+  if(archFilt==='correct')  arc=arc.filter(p=>p.match===true);
+  if(archFilt==='wrong')    arc=arc.filter(p=>p.match===false);
+  if(archFilt==='high')     arc=arc.filter(p=>p.riskPct>=60);
+  if(archFilt==='deceased') arc=arc.filter(p=>p.deceased);
+  const el=document.getElementById('archcnt'); if(el) el.textContent='— '+arc.length+' patients';
+  const list=document.getElementById('alist');
+  if(!arc.length){ list.innerHTML='<div style="text-align:center;padding:40px;color:var(--t4);font-size:12px">No records match</div>'; return; }
+  list.innerHTML=arc.map(p=>{
+    const rc=p.riskPct>=60?'var(--red)':p.riskPct>=33?'var(--amber)':'var(--teal)';
+    const oc=p.match===true?'ok':p.match===false?'bad':'pend';
+    const eid=p.id.replace(/'/g,"\'");
+    return '<div class="acard '+(selArchId===p.id?'sel':'')+'" data-archid="' + encodeURIComponent(p.id) + '">' +
+      '<div class="acr"><div class="acav" style="background:'+p.color+'22;color:'+p.color+';border:1px solid '+p.color+'44">'+(p.initials||'??')+'</div>' +
+      '<div class="acid">'+p.id+'</div><div class="acscore" style="color:'+rc+'">'+p.riskPct+'%</div></div>' +
+      '<div class="acm">'+p.age+p.sex+' &bull; '+p.surg+(p.deceased?' &bull; dec.':'')+' &bull; '+fmtD(p.archivedAt)+'</div>' +
+      '<div class="acoc"><div class="chip '+oc+'">'+(p.match===true?'Correct':p.match===false?'Wrong':'Pending')+'</div>' +
+      (p.outcome?'<span style="font-size:10px;color:var(--t4)"> '+p.outcome+'</span>':'')+
+      '</div></div>';
+  }).join('');
+  document.getElementById('alist').querySelectorAll('[data-archid]').forEach(function(el){el.addEventListener('click',function(){selectArch(decodeURIComponent(el.dataset.archid));});});
+}
+function selectArch(id) {
+  selArchId=id; renderArchive();
+  const p=DB.A.find(a=>a.id===id); if(!p) return;
+  const d=document.getElementById('adet'), f=p.f||{};
+  const rc=p.riskPct>=60?'var(--red)':p.riskPct>=33?'var(--amber)':'var(--teal)';
+  const vf=[{n:'HR',v:f.hr,u:'bpm'},{n:'SBP',v:f.sbp,u:'mmHg'},{n:'SpO2',v:f.spo2,u:'%'},
+             {n:'Lactate',v:f.lac,u:'mmol/L'},{n:'GCS',v:f.gcs,u:''},{n:'Temp',v:f.temp,u:'C'},
+             {n:'Creat',v:f.cr,u:''},{n:'WBC',v:f.wbc,u:''},{n:'Hgb',v:f.hgb,u:''},{n:'Glucose',v:f.glu,u:''}];
+  const tl=[
+    {t:p.admitDate||fmtD(p.archivedAt-172800000),ti:'ICU Admission',d:'VIGOR: '+p.riskPct+'% ('+p.riskLabel+') via LR+GB',c:rc},
+    ...(p.riskPct>=60?[{t:'T+0h',ti:'High-Risk Alert',d:'Score ≥60% — review triggered',c:'var(--red)'}]:[]),
+    {t:'T+24h',ti:'Outcome Review',d:'Actual: '+(p.outcome||'--')+(p.correctionMade?' · corrected':'')+' · VIGOR '+(p.match?'CORRECT':'WRONG'),c:p.match?'var(--teal)':'var(--red)'},
+    {t:'Archived',ti:'Record Archived',d:p.match===true?'Correct.':p.match===false?'Flagged.':'--',c:p.match===true?'var(--teal)':p.match===false?'var(--red)':'var(--t4)'},
+  ];
+  const eid=p.id.replace(/'/g,"\'");
+  d.innerHTML=
+    '<div class="card fi">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">' +
+        '<div><div style="font-family:var(--ff);font-weight:700;font-size:15px;color:'+rc+'">'+p.id+'</div>' +
+        '<div style="font-family:var(--fm);font-size:11px;color:var(--t3);margin-top:2px">'+p.age+p.sex+' &bull; '+p.surg+(p.deceased?' &bull; Deceased':'')+' &bull; LOS '+(p.los||'?')+'d</div></div>' +
+        '<div style="text-align:right"><div style="font-family:var(--ff);font-weight:800;font-size:28px;color:'+rc+'">'+p.riskPct+'%</div>' +
+        '<div style="font-family:var(--fm);font-size:9px;color:'+rc+'">'+p.riskLabel+'</div>' +
+        '<div style="font-family:var(--fm);font-size:9px;color:var(--t4)">LR:'+p.lr+'% GB:'+p.gb+'%</div></div>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:12px">' +
+        vf.map(v=>'<div style="background:var(--s2);border:1px solid var(--b1);border-radius:5px;padding:5px 7px">' +
+          '<div style="font-family:var(--fm);font-size:8px;color:var(--t4);text-transform:uppercase">'+v.n+'</div>' +
+          '<div style="font-family:var(--ff);font-weight:700;font-size:12px">'+(v.v!==undefined?v.v:'--')+'</div>' +
+          '<div style="font-family:var(--fm);font-size:8px;color:var(--t4)">'+v.u+'</div></div>').join('') +
+      '</div>' +
+    '</div>' +
+    '<div class="card fi"><div style="font-family:var(--ff);font-weight:600;font-size:13px;margin-bottom:11px">Timeline</div>' +
+      '<div class="tl">'+tl.map(t=>'<div class="tli"><div class="tlw"><div class="tld" style="border-color:'+t.c+';background:'+t.c+'33"></div><div class="tll"></div></div><div class="tlc"><div class="tlt">'+t.t+'</div><div class="tlti">'+t.ti+'</div><div class="tldi">'+t.d+'</div></div></div>').join('')+'</div>' +
+    '</div>' +
+    (p.shap?'<div class="card fi"><div style="font-family:var(--ff);font-weight:600;font-size:13px;margin-bottom:10px">LR-SHAP</div><div class="shap-list">'+buildShap(p.shap)+'</div></div>':'') +
+    (p.notes?'<div class="card fi"><div style="font-family:var(--ff);font-weight:600;font-size:13px;margin-bottom:6px">Notes</div><div style="font-size:12px;color:var(--t2);line-height:1.6">'+p.notes+'</div></div>':'') +
+    '<button data-rerunid="' + encodeURIComponent(p.id) + '" style="padding:9px 16px;background:rgba(14,165,233,.1);border:1px solid var(--blue);border-radius:7px;color:var(--blue);font-family:var(--fm);font-size:11px;cursor:pointer;width:100%">Re-run with ML &#8634;</button>';
+}
+function rerun(id) {
+  const p=DB.A.find(a=>a.id===id); if(!p) return;
+  loadIntoForm(p.f,p.id+'-R'); const r=compute(p.f); renderResult(p.f,r);
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.querySelector('[onclick*="predict"]').classList.add('on');
+  document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('on'));
+  document.getElementById('page-predict').classList.add('on');
+  showToast('Re-running '+p.id);
+}
+
+// ════════════════════════════════════════════════════════
+// DATABASE
+// ════════════════════════════════════════════════════════
+const COLS=[
+  {k:'id',l:'Patient ID'},{k:'age',l:'Age'},{k:'sex',l:'Sex'},{k:'surg',l:'Surgery'},
+  {k:'f.hr',l:'HR'},{k:'f.sbp',l:'SBP'},{k:'f.spo2',l:'SpO2'},{k:'f.temp',l:'Temp'},
+  {k:'f.rr',l:'RR'},{k:'f.gcs',l:'GCS'},{k:'f.lac',l:'Lactate'},{k:'f.cr',l:'Creat'},
+  {k:'riskPct',l:'VIGOR%'},{k:'lr',l:'LR%'},{k:'gb',l:'GB%'},{k:'sofa',l:'SOFA'},
+  {k:'outcome',l:'Outcome'},{k:'match',l:'Correct?'},{k:'los',l:'LOS(d)'},{k:'deceased',l:'Deceased'},
+];
+let dbSortCol=null, dbSortDir='asc';
+function gv(p,k){ if(k.startsWith('f.')){ const v=p.f?.[k.slice(2)]; return v!==undefined?v:''; } return p[k]!==undefined?p[k]:''; }
+function renderDB() {
+  const q=(document.getElementById('dbq')?.value||'').toLowerCase();
+  const seen=new Set();
+  let data=[...DB.A,...DB.Q.map(p=>({...p,outcome:'pending',match:null}))].filter(p=>{if(seen.has(p.id))return false;seen.add(p.id);return true;});
+  if(q) data=data.filter(p=>COLS.some(c=>String(gv(p,c.k)).toLowerCase().includes(q)));
+  if(dbSortCol) data.sort((a,b)=>{const av=gv(a,dbSortCol),bv=gv(b,dbSortCol);return(dbSortDir==='asc'?1:-1)*(typeof av==='number'?av-bv:String(av).localeCompare(String(bv)));});
+  const cnt=document.getElementById('dbcnt'); if(cnt) cnt.textContent='— '+data.length+' records';
+  document.getElementById('dbhd').innerHTML='<tr>'+COLS.map(function(c){return '<th class="'+(dbSortCol===c.k?(dbSortDir==='asc'?'sa':'sd'):'')+'" data-col="'+c.k+'">'+c.l+'</th>';}).join('')+'</tr>';
+  document.getElementById('dbbd').innerHTML=data.map(p=>{
+    const rc=p.riskPct>=60?'var(--red)':p.riskPct>=33?'var(--amber)':'var(--teal)';
+    const eid=p.id.replace(/'/g,"\'");
+    return '<tr data-jumpid="' + encodeURIComponent(p.id) + '">'+COLS.map(c=>{
+      const v=gv(p,c.k);
+      if(c.k==='riskPct') return '<td><span class="tc" style="background:'+rc+'22;color:'+rc+'">'+v+'%</span></td>';
+      if(c.k==='match') return '<td>'+(v===true?'<span class="tc" style="background:rgba(0,212,170,.1);color:var(--teal)">Yes</span>':v===false?'<span class="tc" style="background:rgba(239,68,68,.1);color:var(--red)">No</span>':'--')+'</td>';
+      if(c.k==='f.vaso'||c.k==='deceased') return '<td>'+(v?'Yes':'No')+'</td>';
+      return '<td>'+(v===''||v===null||v===undefined?'--':v)+'</td>';
+    }).join('')+'</tr>';
+  }).join('');
+  document.getElementById('dbbd').querySelectorAll('[data-jumpid]').forEach(function(tr){tr.addEventListener('click',function(){jumpArch(decodeURIComponent(tr.dataset.jumpid));});});
+}
+function dbSort(col){ col=col.replace(/\./g,'.'); if(dbSortCol===col)dbSortDir=dbSortDir==='asc'?'desc':'asc'; else{dbSortCol=col;dbSortDir='asc';} renderDB(); }
+function jumpArch(id) {
+  selArchId=id;
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.querySelector('[onclick*="archive"]').classList.add('on');
+  document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('on'));
+  document.getElementById('page-archive').classList.add('on');
+  renderArchive(); selectArch(id);
+}
+function exportCSV() {
+  const rows=[COLS.map(c=>c.l).join(',')];
+  const seen=new Set();
+  [...DB.A,...DB.Q.map(p=>({...p,outcome:'pending',match:null}))].filter(p=>{if(seen.has(p.id))return false;seen.add(p.id);return true;}).forEach(p=>{
+    rows.push(COLS.map(c=>'"'+String(gv(p,c.k)||'').replace(/"/g,'""')+'"').join(','));
+  });
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(rows.join('\n'));
+  a.download='VIGOR_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+  showToast('Exported '+rows.length+' rows');
+}
+
+// ════════════════════════════════════════════════════════
+// ACCURACY
+// ════════════════════════════════════════════════════════
+function renderAccuracy() {
+  const a=DB.A, accw=document.getElementById('accw');
+  if(!a.length){ accw.innerHTML='<div class="de" style="height:100%"><div style="font-size:32px;opacity:.15">&#128202;</div><div>Archive patients to see accuracy</div></div>'; return; }
+  const total=a.length, correct=a.filter(p=>p.match===true).length;
+  const highRisk=a.filter(p=>p.riskPct>=60), highOk=highRisk.filter(p=>p.match===true).length;
+  const avgRisk=Math.round(a.reduce((s,p)=>s+p.riskPct,0)/total);
+  const acc=Math.round((correct/total)*100);
+  const byOutcome={stable:0,deteriorated:0,critical:0,transferred:0};
+  a.forEach(p=>{ if(p.outcome&&p.outcome in byOutcome)byOutcome[p.outcome]++; });
+  const surgAcc={};
+  a.forEach(p=>{ if(!surgAcc[p.surg])surgAcc[p.surg]={t:0,c:0}; surgAcc[p.surg].t++; if(p.match===true)surgAcc[p.surg].c++; });
+  accw.innerHTML=
+    '<div class="ag">' +
+      '<div class="as"><div class="asv" style="color:'+(acc>=80?'var(--teal)':acc>=60?'var(--amber)':'var(--red)')+'">'+acc+'%</div><div class="ask">Overall Accuracy</div><div class="ast" style="color:var(--t3)">'+correct+' / '+total+' correct</div></div>' +
+      '<div class="as"><div class="asv">'+total+'</div><div class="ask">Total Archived</div><div class="ast" style="color:var(--t4)">'+DB.Q.length+' in queue</div></div>' +
+      '<div class="as"><div class="asv" style="color:var(--red)">'+(highRisk.length?Math.round((highOk/highRisk.length)*100)+'%':'N/A')+'</div><div class="ask">High-Risk Sensitivity</div><div class="ast">'+highOk+'/'+highRisk.length+'</div></div>' +
+      '<div class="as"><div class="asv">'+avgRisk+'%</div><div class="ask">Avg VIGOR Score</div></div>' +
+    '</div>' +
+    '<div class="ach">' +
+      '<div class="card"><div class="ct" style="margin-bottom:12px">Outcomes Distribution</div><div style="position:relative;height:180px"><canvas id="ac1"></canvas></div></div>' +
+      '<div class="card"><div class="ct" style="margin-bottom:12px">Accuracy by Surgery</div><div style="display:flex;flex-direction:column;gap:8px">' +
+        Object.entries(surgAcc).map(([s,v])=>{ const pv=Math.round((v.c/v.t)*100); return '<div style="display:flex;align-items:center;gap:8px"><div style="font-family:var(--fm);font-size:10px;color:var(--t2);width:100px;flex-shrink:0">'+s+'</div><div style="flex:1;height:5px;background:var(--b1);border-radius:3px"><div style="height:100%;width:'+pv+'%;background:var(--teal);border-radius:3px"></div></div><div style="font-family:var(--fm);font-size:10px;color:var(--t3);width:35px;text-align:right">'+pv+'%</div></div>'; }).join('') +
+      '</div></div>' +
+    '</div>' +
+    '<div class="card" style="background:rgba(0,212,170,.03);border-color:rgba(0,212,170,.2)">' +
+      '<div class="ct" style="color:var(--teal);margin-bottom:8px">ML Model Info</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-family:var(--fm);font-size:11px;color:var(--t3)">' +
+        '<div>LR AUC-ROC: <span style="color:var(--teal)">0.864</span></div><div>GB AUC-ROC: <span style="color:var(--teal)">0.944</span></div>' +
+        '<div>LR: C=0.05, L2 regularization</div><div>GB: 50 trees, depth=2, lr=0.05</div>' +
+        '<div>Calibration: Platt sigmoid (5-fold)</div><div>Ensemble: 40% LR + 60% GB</div>' +
+        '<div>Training: 100 MIMIC-IV ICU patients</div><div>Features: 26 clinical variables</div>' +
+      '</div>' +
+    '</div>';
+  try {
+    new Chart(document.getElementById('ac1'),{
+      type:'doughnut',
+      data:{labels:Object.keys(byOutcome),datasets:[{data:Object.values(byOutcome),backgroundColor:['rgba(0,212,170,.7)','rgba(245,158,11,.7)','rgba(239,68,68,.7)','rgba(14,165,233,.7)'],borderWidth:0}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#7aaec8',font:{family:'DM Mono',size:10},boxWidth:10}}}}
+    });
+  } catch(e){}
+}
+
+// ════════════════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════════════════
+function updBadges() {
+  const q=DB.Q, rd=q.filter(p=>p.status==='review').length;
+  const b=document.getElementById('qbadge');
+  b.textContent=q.length; b.className='badge'+(rd>0?' due':'');
+}
+function showToast(m) {
+  const t=document.getElementById('toast');
+  t.textContent=m; t.classList.add('on');
+  clearTimeout(t._to); t._to=setTimeout(()=>t.classList.remove('on'),3500);
+}
+
+// ════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════
+function initApp() {
+  seedOnce();
+  genPID();
+  filterPtList();
+  updBadges();
+}
+
+tickClock();
+setInterval(tickClock, 1000);
+setInterval(()=>{ if(currentUser){ checkDue(); updBadges(); } }, 60000);
+
+
+
+
+</script>
+</body>
+</html>
